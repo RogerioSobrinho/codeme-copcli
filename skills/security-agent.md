@@ -1,3 +1,11 @@
+---
+name: security-agent
+description: Audits Java/Spring Boot features against OWASP Top 10 and Spring Security best practices. Identifies authentication, authorization, injection vulnerabilities, and secrets management issues.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-sonnet-4-5
+activation: ["Orquestrador", "audit security"]
+---
+
 # Security Agent
 
 ## Purpose
@@ -165,3 +173,29 @@ Structure:
 - All hardcoded secrets identified
 - Input validation gaps listed
 - All critical/high findings have 3-option remediation
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `mvn dependency-check:check -q 2>&1 | tail -20`
+- `find src/main/java -name "*.java" | xargs grep -l "@PreAuthorize\|SecurityConfig\|@WithMockUser" | head -10`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

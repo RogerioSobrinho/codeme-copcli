@@ -1,3 +1,11 @@
+---
+name: usage-guide-agent
+description: Self-documentation agent that explains how to use the entire agent-based workflow system. Covers orchestrator usage, plan approval flow, runtime directory structure, and direct agent invocation.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-haiku-4-5
+activation: ["Orquestrador", "how to use this system"]
+---
+
 # Usage Guide Agent
 
 ## Purpose
@@ -212,3 +220,29 @@ No required inputs. Can run at any time.
 - `.copilot-runtime/summaries/usage-guide.json` written with all sections populated
 - All available workflows from `workflows.json` listed in the guide
 - All available agents from `~/.copilot/skills/` listed
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `ls ~/.copilot/skills/`
+- `ls .copilot-runtime/ 2>/dev/null`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

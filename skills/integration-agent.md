@@ -1,3 +1,11 @@
+---
+name: integration-agent
+description: Validates integration points between services, adapters, messaging contracts, and external systems in a Java/Spring Boot project. Verifies API contracts, event schemas, idempotency, and adapter correctness.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-sonnet-4-5
+activation: ["Orquestrador", "validate integrations"]
+---
+
 # Integration Agent
 
 ## Purpose
@@ -141,3 +149,29 @@ Structure:
 - Contract violations explicitly listed
 - Idempotency gaps identified
 - Retry/timeout configurations verified
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `find src/main/java -name "*.java" | xargs grep -l "@RestController\|@FeignClient\|@KafkaListener" | head -10`
+- `cat src/main/resources/application.yml 2>/dev/null || cat src/main/resources/application.properties 2>/dev/null | head -40`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

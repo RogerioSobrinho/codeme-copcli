@@ -1,3 +1,11 @@
+---
+name: release-risk-agent
+description: Assesses the risk of releasing a Java/Spring Boot feature to production. Evaluates breaking changes, backward compatibility, rollback complexity, and deployment dependencies with a go/no-go recommendation.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-sonnet-4-5
+activation: ["Orquestrador", "assess release risk"]
+---
+
 # Release Risk Agent
 
 ## Purpose
@@ -180,3 +188,29 @@ Strategy options (present as 3 options):
 - Rollback plan documented
 - 3 release strategy options provided
 - All acceptance criteria verified or unverified list populated
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `git log --oneline main...HEAD`
+- `git diff main...HEAD --stat`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

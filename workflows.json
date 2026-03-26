@@ -1,5 +1,6 @@
 {
   "refactoring": [
+    "codebase-explorer-agent",
     "impact-analysis-agent",
     "test-design-agent",
     "test-quality-agent",
@@ -15,9 +16,11 @@
     "data-integrity-agent",
     "code-review-agent",
     "release-risk-agent",
-    "cicd-agent"
+    "cicd-agent",
+    "documentation-agent"
   ],
   "new_feature": [
+    "codebase-explorer-agent",
     "requirement-agent",
     "impact-analysis-agent",
     "architecture-decision-agent",
@@ -34,9 +37,11 @@
     "data-integrity-agent",
     "code-review-agent",
     "release-risk-agent",
-    "cicd-agent"
+    "cicd-agent",
+    "documentation-agent"
   ],
   "new_project": [
+    "codebase-explorer-agent",
     "requirement-agent",
     "architecture-decision-agent",
     "domain-modeling-agent",
@@ -52,6 +57,10 @@
     "data-integrity-agent",
     "code-review-agent",
     "release-risk-agent",
-    "cicd-agent"
+    "cicd-agent",
+    "documentation-agent"
+  ],
+  "build_fix": [
+    "java-build-resolver-agent"
   ]
 }

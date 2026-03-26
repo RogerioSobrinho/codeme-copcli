@@ -1,3 +1,11 @@
+---
+name: orchestrator
+description: Central controller for agent-based workflows in Java/Spring Boot projects. Reads workflow definitions, enforces plan approval gates, sequences agent execution, and maintains runtime state in `.copilot-runtime/`.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-opus-4-5
+activation: ["Orquestrador", "start workflow"]
+---
+
 # Orchestrator Agent
 
 ## Purpose
@@ -41,6 +49,50 @@ Write empty `plan.json`:
   "steps": [],
   "context_ref": ""
 }
+```
+
+---
+
+## Context Bootstrap
+
+Before executing any workflow step, the orchestrator checks for the shared context file:
+
+```
+.copilot-runtime/artifacts/context.json
+```
+
+### If context.json is ABSENT
+
+Automatically invoke `codebase-explorer-agent` FIRST — even if it is not listed as a step in the workflow definition. This is a **pre-condition** for all agents, not a workflow step.
+
+```json
+// state.json — bootstrap_steps track pre-condition invocations separately
+{
+  "current_step": "",
+  "completed_steps": [],
+  "bootstrap_steps": [
+    { "agent": "codebase-explorer-agent", "status": "completed", "artifacts_ref": [".copilot-runtime/artifacts/context.json"] }
+  ],
+  "refs": {},
+  "history": [],
+  "plan_approved": false
+}
+```
+
+**Rules:**
+- Bootstrap steps are logged under `bootstrap_steps`, never under `completed_steps`
+- Bootstrap does NOT count toward workflow progress
+- If `codebase-explorer-agent` returns `fail`, the orchestrator returns `fail` immediately — execution cannot proceed without context
+- If `context.json` already exists, skip bootstrap entirely (idempotent)
+
+### Execution Loop with Bootstrap
+
+```
+1. Check for .copilot-runtime/artifacts/context.json
+2. IF absent → invoke codebase-explorer-agent (bootstrap step)
+   - On ok  → continue to Step 1 (Read Workflow)
+   - On fail → return fail with bootstrap error
+3. IF present → proceed directly to Step 1 (Read Workflow)
 ```
 
 ---
@@ -122,10 +174,12 @@ Read `.copilot-runtime/state.json`. If `plan_approved != true` → block:
 
 ### Step 5 — Execute Steps Sequentially
 
+**Pre-execution check:** Verify `.copilot-runtime/artifacts/context.json` exists. If absent, auto-invoke `codebase-explorer-agent` as a bootstrap step (see [Context Bootstrap](#context-bootstrap)) before processing any workflow step.
+
 For each pending step:
 
 1. Update `state.json` → `current_step: "<agent>"`
-2. Invoke the agent (pass only file path refs)
+2. Invoke the agent (pass only file path refs, including `context.json`)
 3. Read agent response
 4. On `ok` → append to `completed_steps`, continue
 5. On `fail` | `need_more_input` | `awaiting_plan_approval` → **BLOCK** and surface to user
@@ -203,3 +257,29 @@ If any missing → return `need_more_input`.
 ## Multi-Option Rule
 
 When presenting choices (workflow selection, conflict resolution, blocking decisions), always provide exactly 3 options with trade-offs and mark one as RECOMMENDED.
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `ls .copilot-runtime/`
+- `cat ~/.copilot/workflows.json`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

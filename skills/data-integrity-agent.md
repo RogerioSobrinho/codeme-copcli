@@ -1,3 +1,11 @@
+---
+name: data-integrity-agent
+description: Validates data integrity concerns in Java/Spring Boot + JPA projects. Audits database constraints, migration scripts, transaction boundaries, and idempotency to prevent data corruption.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-sonnet-4-5
+activation: ["Orquestrador", "audit data integrity"]
+---
+
 # Data Integrity Agent
 
 ## Purpose
@@ -148,3 +156,29 @@ Structure:
 - Migration scripts validated
 - Transaction boundaries audited
 - Idempotency gaps documented
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `find src/main/java -name "*.java" | xargs grep -l "@Entity\|@Table" | head -10`
+- `find src/main/resources/db -name "*.sql" 2>/dev/null | head -10`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

@@ -1,3 +1,11 @@
+---
+name: code-review-agent
+description: Performs systematic code review of staged changes, PR diffs, or specific files in Java/Spring Boot projects. Surfaces only genuine issues: bugs, security vulnerabilities, logic errors, and architecture violations.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-sonnet-4-5
+activation: ["Orquestrador", "review code changes"]
+---
+
 # Code Review Agent
 
 ## Purpose
@@ -160,3 +168,29 @@ Structure:
 - `approved` field set (true only if 0 critical, 0 high)
 - Every finding has evidence and remediation
 - Architecture and invariant violations explicitly checked
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `git diff --staged`
+- `git diff main...HEAD --stat`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.

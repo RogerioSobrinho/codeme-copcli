@@ -1,3 +1,11 @@
+---
+name: domain-modeling-agent
+description: Designs and validates domain models for Java/Spring Boot bounded contexts using DDD tactical patterns. Produces Aggregates, Entities, Value Objects, Domain Events, and Domain Services.
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: claude-opus-4-5
+activation: ["Orquestrador", "model the domain"]
+---
+
 # Domain Modeling Agent
 
 ## Purpose
@@ -136,3 +144,29 @@ If not met → `need_more_input`.
 - Invariants are the business rules — never skip them
 - Domain layer has zero framework dependencies
 - Ubiquitous Language is enforced in code naming
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `find src/main/java -name "*.java" | xargs grep -l "@Entity\|@Aggregate" | head -10`
+- `find src/main/java -name "*Domain*\|*Entity*\|*Aggregate*" | head -15`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.
