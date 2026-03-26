@@ -45,6 +45,55 @@ Ask the following before generating. If any is missing → return `need_more_inp
 
 ---
 
+## Model Selection
+
+When generating a new skill, recommend the appropriate model based on the agent's primary responsibility. Present as a 3-option decision:
+
+### Model Selection Decision
+
+**Option 1 — `claude-haiku-4-5` (Lightweight)**
+Use when the agent's primary work is:
+- Documentation generation or formatting
+- Structured lookups (searching existing files, listing files)
+- Simple transformations (format conversion, template filling)
+- Quick diagnostics without deep reasoning
+- Examples: documentation-agent, usage-guide-agent
+- Pros: Fastest, lowest token cost, snappy interactions
+- Cons: May miss subtle reasoning in complex analysis tasks
+
+**Option 2 — `claude-sonnet-4-5` (Balanced — DEFAULT)**
+Use when the agent's primary work is:
+- Code analysis, security audit, performance profiling
+- Test strategy, impact analysis, integration validation
+- Data integrity, concurrency review, observability planning
+- Any agent that reads code and produces structured reports
+- Examples: security-agent, code-review-agent, performance-agent, test-design-agent
+- Pros: Strong reasoning + fast enough for interactive use; best cost/quality ratio
+- Cons: Not optimal for very complex multi-hop architectural decisions
+
+**Option 3 (RECOMMENDED for high-complexity agents) — `claude-opus-4-5` (Premium)**
+Use when the agent's primary work is:
+- Architectural decisions with long-term consequences (ADRs)
+- Domain modeling requiring DDD expertise
+- Orchestration and workflow control
+- Creating or evolving other agents (meta-agents)
+- Strategic planning, roadmap generation
+- Examples: orchestrator, architecture-decision-agent, domain-modeling-agent, agent-creator
+- Pros: Best reasoning quality for complex multi-step decisions
+- Cons: Higher cost and latency; overkill for routine analysis
+
+### Auto-Recommendation Logic
+
+Apply this decision tree to auto-recommend:
+
+1. If agent name contains: `orchestrat`, `architect`, `domain-model`, `creator`, `planner`, `strategic` → **opus**
+2. If agent name contains: `doc`, `guide`, `usage`, `format`, `lookup` → **haiku**
+3. Otherwise → **sonnet** (safe default for all analysis, review, and implementation agents)
+
+Always explain WHY you recommended a specific model when presenting to the user.
+
+---
+
 ## Workflow Integration (MANDATORY DECISION)
 
 After collecting agent identity, ask:
@@ -112,9 +161,17 @@ Before writing any file, output:
 
 ## Skill File Generation Template
 
-Generate the new skill file using this structure:
+Generate the new skill file using this structure. Every generated skill MUST include YAML frontmatter and a Standalone Invocation section.
 
 ```markdown
+---
+name: <kebab-case-agent-name>
+description: <1–2 sentence description of what the agent does and its primary output>
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+model: <claude-haiku-4-5 | claude-sonnet-4-5 | claude-opus-4-5>
+activation: ["Orquestrador", "<natural-language trigger phrase>"]
+---
+
 # <Agent Name>
 
 ## Purpose
@@ -128,23 +185,60 @@ Generate the new skill file using this structure:
 ## Outputs
 Writes to `.copilot-runtime/<subdir>/<filename>.json`
 
+```json
+{
+  "status": "ok | fail | need_more_input | awaiting_plan_approval",
+  "artifacts_ref": [],
+  "questions": [],
+  "validation": { "passed": true, "issues": [] },
+  "notes": "",
+  "next_step_hint": ""
+}
+```
+
 ## Execution Steps
 1. ...
-
-## Agent Contract — Output Format
-{json contract}
 
 ## Validation Rules
 - ...
 
 ## Definition of Ready
-- ...
+- Input files present or diagnostic commands can substitute
+- No ambiguous inputs accepted without clarification
 
 ## Definition of Done
-- ...
+- Output file written and valid JSON
+- Agent contract returned with correct status
+- All validation rules passed
 
 ## Questions When Input Missing
 - ...
+
+---
+
+## Standalone Invocation (No Orchestrator)
+
+This agent can be invoked directly without the orchestrator. When `.copilot-runtime/artifacts/context.json` is absent, three options are available:
+
+**Option 1 — Run Diagnostic Commands Directly**
+Execute targeted commands to gather context on the fly:
+- `<agent-specific diagnostic command 1>`
+- `<agent-specific diagnostic command 2>`
+- Pros: Fast, zero extra agent invocations
+- Cons: Partial context; may miss cross-cutting concerns
+
+**Option 2 — Invoke `codebase-explorer-agent` First**
+Ask the user to run `codebase-explorer-agent`, wait for `.copilot-runtime/artifacts/context.json`, then re-run this agent.
+- Pros: Richer, consistent context shared with all downstream agents
+- Cons: Extra manual step; slightly slower
+
+**Option 3 (RECOMMENDED) — Auto-Bootstrap then Proceed**
+Invoke `codebase-explorer-agent` automatically, consume the resulting `context.json`, then continue execution without user intervention.
+- Pros: Fully autonomous; deterministic context; no coordination overhead
+- Cons: Slightly longer cold start
+- **Why recommended:** Eliminates user coordination overhead and guarantees all agents share the same project baseline.
+
+After context is available via any option, resume normal execution flow.
 ```
 
 ---
