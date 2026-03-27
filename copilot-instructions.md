@@ -76,6 +76,10 @@ Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Se
 * **Environment Aware:** Use config/env variables; never hardcode environment-specific values.
 * **Portability:** Code must be portable across Dev, Staging, and Production environments.
 
+## 16) Repository Structure
+* **`agents/`** — Custom agent profiles (`.agent.md` files). Each agent has YAML frontmatter (`name`, `description`, `tools`, `model`) and prose instructions. Invoke agents by name to delegate specialized work.
+* **`skills/`** — Knowledge reference bases. Each skill lives in `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description` only). Load skills for domain-specific reference material during implementation.
+
 ---
 
 # Multi-Option Decision Rules
