@@ -1,12 +1,16 @@
 # Everything Copilot CLI
 
-A production-ready foundation for GitHub Copilot CLI: **10 agents** + **30 knowledge skills** engineered for Java/Spring Boot, Angular, and Flutter development.
+A production-ready foundation for GitHub Copilot CLI: **10 agents** + **30 knowledge skills** + **2 MCP servers** engineered for Java/Spring Boot, Angular, and Flutter development.
 
 Clone to `~/.copilot/` once. Every project gets instant context. Every session starts informed.
 
 ```bash
-git clone https://github.com/your-username/copilot-cli-skills-template
+# Option 1: Clone and install
+git clone https://github.com/RogerioSobrinho/copilot-cli-skills-template
 cd copilot-cli-skills-template && ./install.sh
+
+# Option 2: One-liner (no clone needed)
+curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-template/main/install.sh | bash
 ```
 
 ---
@@ -20,6 +24,7 @@ Layer 0 — Foundation (this repo, public)
 ~/.copilot/
 ├── agents/          10 agents for daily workflows
 ├── skills/          30 knowledge skills, auto-injected
+├── mcp-config.json  2 local MCP servers (sequential-thinking + memory)
 └── copilot-instructions.md   always-on global rules
 
 Layer 1 — Company Knowledge (local only, never in any repo)
@@ -180,16 +185,53 @@ Skills are reference material, loaded automatically when relevant. You don't inv
 
 ---
 
+## MCP Servers (2 — 100% local)
+
+Both servers run as local Node.js processes via `npx`. Zero network calls, zero data sent externally. Safe for corporate environments.
+
+| Server | What it does | When it activates |
+|---|---|---|
+| **sequential-thinking** | Breaks complex problems into numbered thought steps with revision and branching | Automatically, during architecture decisions, refactoring plans, debugging chains |
+| **memory** | Persists entities, relations, and observations in a local knowledge graph (`~/.copilot/memory.jsonl`) | When the model detects reusable info — your preferences, conventions, past decisions |
+
+### Sequential Thinking in practice
+
+You ask: "should I use event sourcing or CRUD for orders?"
+
+The model chains structured thought steps: (1) analyze requirements → (2) evaluate CRUD → (3) evaluate event sourcing → (4) compare trade-offs → (5) revise step 2 with new insight → (6) conclude. Each step is a discrete tool call — not free-text rambling. Ephemeral: zero storage.
+
+### Memory in practice
+
+**Session 1:** You say "we always use Flyway, never Liquibase." The model stores: `entity=team_convention`, `observation="always use Flyway, never Liquibase"`.
+
+**Session 2:** You ask "set up DB migrations." The model searches the graph → finds Flyway preference → uses it without asking again.
+
+Storage: `~/.copilot/memory.jsonl` — local file, never transmitted. Complements the `continuous-learning` skill.
+
+### Pre-installed
+
+`install.sh` deploys `mcp-config.json` to `~/.copilot/`. If you already have a custom `mcp-config.json`, the existing file is renamed to `mcp-config.json.old`.
+
+Prerequisite: Node.js + npm installed (`npx` must be in PATH).
+
+---
+
 ## Deploy
 
 ```bash
-# First install
-git clone https://github.com/your-username/copilot-cli-skills-template
+# Option 1: Clone and install (recommended for contributors)
+git clone https://github.com/RogerioSobrinho/copilot-cli-skills-template
 cd copilot-cli-skills-template
 ./install.sh
 
+# Option 2: One-liner remote install (no clone needed)
+curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-template/main/install.sh | bash
+
 # Update (safe — preserves your company-local skills)
+# From cloned repo:
 git pull && ./install.sh
+# Or remote:
+curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-template/main/install.sh | bash
 ```
 
 `install.sh` preserves any `~/.copilot/skills/company-*/` directories. Your local company skills are never overwritten by an update.
@@ -205,7 +247,8 @@ copilot-cli-skills-template/
 ├── .github/
 │   └── copilot-instructions.template.md     Project context starter template
 ├── copilot-instructions.md                  Global + Java/Spring Boot rules
-├── install.sh                               Smart merge deploy script
+├── mcp-config.json                          MCP servers (sequential-thinking + memory)
+├── install.sh                               Smart deploy (local or remote via curl)
 └── README.md
 ```
 

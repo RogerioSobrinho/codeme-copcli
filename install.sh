@@ -1,33 +1,143 @@
 #!/bin/bash
-# install.sh — Smart deploy: merges this template into ~/.copilot/ while preserving
-# any company-specific skills you've added locally.
+# install.sh — Everything Copilot CLI Installer
+#
+# Two modes:
+#   LOCAL:  ./install.sh                          (from a cloned repo)
+#   REMOTE: curl -fsSL <raw-url>/install.sh | bash  (downloads everything via curl)
 #
 # Safe to run multiple times (idempotent).
-# Preserved: ~/.copilot/skills/company-*/  (any directory starting with "company-")
-# Updated:   everything else
+# Preserved: ~/.copilot/skills/company-*/  (company-specific, never overwritten)
+# MCP config: existing mcp-config.json renamed to mcp-config.json.old
 
 set -euo pipefail
 
-TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${HOME}/.copilot"
 PRESERVED_PATTERN="company-*"
+REPO_RAW="https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-template/main"
 
-# ─── Colors ───────────────────────────────────────────────────────────────────
+# ─── Colors ────────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 info()    { echo -e "${BLUE}[info]${NC}  $*"; }
 success() { echo -e "${GREEN}[ok]${NC}    $*"; }
 warn()    { echo -e "${YELLOW}[skip]${NC}  $*"; }
+error()   { echo -e "${RED}[err]${NC}   $*"; }
+
+# ─── File manifest ─────────────────────────────────────────────────────────────
+# All files that compose the template. Update this list when adding new files.
+ROOT_FILES=(
+  "copilot-instructions.md"
+  "mcp-config.json"
+)
+
+AGENTS=(
+  "code-review.agent.md"
+  "doc-writer.agent.md"
+  "explore.agent.md"
+  "fix.agent.md"
+  "init-project.agent.md"
+  "new-feature.agent.md"
+  "new-project.agent.md"
+  "refactor.agent.md"
+  "secure.agent.md"
+  "write-a-commit.agent.md"
+)
+
+SKILLS=(
+  "angular-patterns"
+  "angular-security"
+  "angular-tdd"
+  "api-design"
+  "continuous-learning"
+  "database-migrations"
+  "debugging-playbook"
+  "deployment-patterns"
+  "docker-patterns"
+  "e2e-testing"
+  "flutter-patterns"
+  "flutter-tdd"
+  "frontend-principles"
+  "git-workflow"
+  "iterative-retrieval"
+  "java-coding-standards"
+  "jpa-patterns"
+  "messaging-patterns"
+  "observability-patterns"
+  "postgres-patterns"
+  "resilience-patterns"
+  "search-first"
+  "skill-authoring"
+  "springboot-patterns"
+  "springboot-scaffold"
+  "springboot-security"
+  "springboot-tdd"
+  "springboot-verification"
+  "strategic-compact"
+  "verification-loop"
+)
+
+# ─── Detect mode ───────────────────────────────────────────────────────────────
+SCRIPT_DIR=""
+LOCAL_MODE=false
+
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [ -f "$SCRIPT_DIR/copilot-instructions.md" ] && [ -d "$SCRIPT_DIR/agents" ] && [ -d "$SCRIPT_DIR/skills" ]; then
+    LOCAL_MODE=true
+  fi
+fi
 
 echo ""
 echo -e "${BLUE}Everything Copilot CLI — Install${NC}"
-echo "  Template : $TEMPLATE_DIR"
-echo "  Target   : $TARGET_DIR"
+if $LOCAL_MODE; then
+  echo "  Mode   : local (from cloned repo)"
+  echo "  Source : $SCRIPT_DIR"
+else
+  echo "  Mode   : remote (downloading from GitHub)"
+  echo "  Source : $REPO_RAW"
+fi
+echo "  Target : $TARGET_DIR"
 echo ""
+
+# ─── Helper: get file content ─────────────────────────────────────────────────
+# In local mode, reads from disk. In remote mode, downloads via curl.
+get_file() {
+  local rel_path="$1"
+  if $LOCAL_MODE; then
+    cat "$SCRIPT_DIR/$rel_path"
+  else
+    curl -fsSL "$REPO_RAW/$rel_path"
+  fi
+}
+
+# ─── Helper: deploy file ──────────────────────────────────────────────────────
+# Downloads/reads source, writes to target only if changed.
+deploy_file() {
+  local rel_path="$1"
+  local dest="$2"
+  local label="${3:-$rel_path}"
+
+  mkdir -p "$(dirname "$dest")"
+
+  local tmp
+  tmp=$(mktemp)
+  if get_file "$rel_path" > "$tmp" 2>/dev/null; then
+    if [ -f "$dest" ] && diff -q "$tmp" "$dest" &>/dev/null; then
+      rm "$tmp"
+      return 1
+    fi
+    mv "$tmp" "$dest"
+    return 0
+  else
+    rm -f "$tmp"
+    error "Failed to get: $rel_path"
+    return 2
+  fi
+}
 
 # ─── 1. Create target structure ───────────────────────────────────────────────
 mkdir -p "$TARGET_DIR/agents" "$TARGET_DIR/skills"
 
-# ─── 2. Discover preserved skills (company-specific, local-only) ──────────────
+# ─── 2. Discover preserved skills ─────────────────────────────────────────────
 PRESERVED=()
 if [ -d "$TARGET_DIR/skills" ]; then
   for dir in "$TARGET_DIR/skills"/$PRESERVED_PATTERN; do
@@ -43,14 +153,31 @@ if [ ${#PRESERVED[@]} -gt 0 ]; then
   echo ""
 fi
 
-# ─── 3. Copy agents ───────────────────────────────────────────────────────────
+# ─── 3. Handle MCP config (rename existing to .old) ──────────────────────────
+MCP_DEST="$TARGET_DIR/mcp-config.json"
+if [ -f "$MCP_DEST" ]; then
+  cp "$MCP_DEST" "${MCP_DEST}.old"
+  warn "mcp-config.json  → renamed existing to mcp-config.json.old"
+fi
+
+# ─── 4. Deploy root files ─────────────────────────────────────────────────────
+ROOT_UPDATED=0
+for file in "${ROOT_FILES[@]}"; do
+  if deploy_file "$file" "$TARGET_DIR/$file" "$file"; then
+    success "$file"
+    ((ROOT_UPDATED++)) || true
+  fi
+done
+
+if [ "$ROOT_UPDATED" -eq 0 ]; then
+  info "root files — all up to date"
+fi
+
+# ─── 5. Deploy agents ─────────────────────────────────────────────────────────
 AGENTS_UPDATED=0
-for src in "$TEMPLATE_DIR/agents"/*.agent.md; do
-  [ -f "$src" ] || continue
-  dest="$TARGET_DIR/agents/$(basename "$src")"
-  if ! diff -q "$src" "$dest" &>/dev/null 2>&1; then
-    cp "$src" "$dest"
-    success "agents/$(basename "$src")"
+for agent in "${AGENTS[@]}"; do
+  if deploy_file "agents/$agent" "$TARGET_DIR/agents/$agent" "agents/$agent"; then
+    success "agents/$agent"
     ((AGENTS_UPDATED++)) || true
   fi
 done
@@ -59,59 +186,36 @@ if [ "$AGENTS_UPDATED" -eq 0 ]; then
   info "agents/  — all up to date"
 fi
 
-# ─── 4. Copy skills (skip preserved) ─────────────────────────────────────────
+# ─── 6. Deploy skills (skip preserved) ────────────────────────────────────────
 SKILLS_UPDATED=0
-for src_dir in "$TEMPLATE_DIR/skills"/*/; do
-  [ -d "$src_dir" ] || continue
-  skill_name="$(basename "$src_dir")"
-
-  # Skip if this skill matches the preserved pattern
+for skill in "${SKILLS[@]}"; do
   skip=false
   for preserved in "${PRESERVED[@]}"; do
-    [ "$skill_name" = "$preserved" ] && skip=true && break
+    [ "$skill" = "$preserved" ] && skip=true && break
   done
   $skip && continue
 
-  dest_dir="$TARGET_DIR/skills/$skill_name"
-  mkdir -p "$dest_dir"
-
-  for src_file in "$src_dir"*; do
-    [ -f "$src_file" ] || continue
-    dest_file="$dest_dir/$(basename "$src_file")"
-    if ! diff -q "$src_file" "$dest_file" &>/dev/null 2>&1; then
-      cp "$src_file" "$dest_file"
-      success "skills/$skill_name/$(basename "$src_file")"
-      ((SKILLS_UPDATED++)) || true
-    fi
-  done
+  if deploy_file "skills/$skill/SKILL.md" "$TARGET_DIR/skills/$skill/SKILL.md" "skills/$skill/SKILL.md"; then
+    success "skills/$skill/SKILL.md"
+    ((SKILLS_UPDATED++)) || true
+  fi
 done
 
 if [ "$SKILLS_UPDATED" -eq 0 ]; then
   info "skills/  — all up to date"
 fi
 
-# ─── 5. Copy root files ───────────────────────────────────────────────────────
-for src in "$TEMPLATE_DIR/copilot-instructions.md"; do
-  [ -f "$src" ] || continue
-  dest="$TARGET_DIR/$(basename "$src")"
-  if ! diff -q "$src" "$dest" &>/dev/null 2>&1; then
-    cp "$src" "$dest"
-    success "$(basename "$src")"
-  else
-    info "$(basename "$src")  — up to date"
-  fi
-done
-
-# ─── 6. Summary ───────────────────────────────────────────────────────────────
+# ─── 7. Summary ───────────────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}Done.${NC}"
 echo ""
 
 TOTAL_AGENTS=$(ls "$TARGET_DIR/agents"/*.agent.md 2>/dev/null | wc -l | tr -d ' ')
-TOTAL_SKILLS=$(ls -d "$TARGET_DIR/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')
+TOTAL_SKILLS=$(find "$TARGET_DIR/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 
 echo "  Agents : $TOTAL_AGENTS"
 echo "  Skills : $TOTAL_SKILLS"
+echo "  MCPs   : sequential-thinking, memory"
 
 if [ ${#PRESERVED[@]} -gt 0 ]; then
   echo ""
@@ -122,9 +226,9 @@ if [ ${#PRESERVED[@]} -gt 0 ]; then
 fi
 
 echo ""
-echo -e "  ${BLUE}Tip:${NC} Company-specific skills (never committed) go in:"
+echo -e "  ${BLUE}Tip:${NC} Company-specific skills go in:"
 echo "       ~/.copilot/skills/company-{name}-{topic}/SKILL.md"
 echo ""
 echo -e "  ${BLUE}Tip:${NC} For per-project context, run the init-project agent:"
-echo "       cd your-project && copilot  # then type /init-project"
+echo "       cd your-project && copilot  # then: /agent → init-project"
 echo ""
