@@ -1,10 +1,17 @@
 # Global Copilot Instructions (Ultra-Senior & Architect Level)
 
-**Available agents:** `/new-feature`, `/explore`, `/code-review`, `/new-project`, `/fix`, `/secure`, `/refactor`
+**Available agents:** `/new-feature`, `/explore`, `/code-review`, `/new-project`, `/fix`, `/secure`, `/refactor`, `/doc-writer`, `/write-a-commit`, `/init-project`
 
 
 ## 0) Core Objective
 Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Security**, and **Scalability**. Every line must be professional, maintainable, and strictly necessary.
+
+## 0.1) Research Before Coding (Mandatory Step 0)
+Before writing any new implementation:
+1. **Search the existing codebase first** — `grep`, `find`, read existing patterns. Never create a parallel implementation of something that already exists.
+2. **Check existing libraries** — search Maven Central / npm / pub.dev before hand-rolling utility code. Prefer battle-tested libraries over custom solutions.
+3. **Read the framework docs** — confirm API behavior and version-specific details before implementing. Do not guess Spring Boot auto-configuration behavior.
+4. If a proven pattern exists in the codebase, adopt it. Consistency beats theoretical perfection.
 
 ## 1) Communication & Logic Protocol
 * **Stoic Mode:** Purely technical and direct. No emojis, no conversational filler, no "AI enthusiasm."
@@ -23,7 +30,7 @@ Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Se
 * **Null Safety:** Strictly avoid null pointer risks. Use Optionals, Null Objects, or Sound Null Safety.
 
 ## 4) State & Idempotency
-* **Immutability:** Default to `final`, `readonly`, or `const`.
+* **Immutability:** Default to `final`, `readonly`, or `const`. Return defensive copies from public APIs (`List.copyOf()`, `Map.copyOf()`). Create new objects instead of mutating existing ones.
 * **Idempotency:** Ensure operations (especially API/DB writes) are safe for retries.
 * **Pure Functions:** Minimize side effects; favor deterministic logic.
 
@@ -41,6 +48,8 @@ Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Se
 * **OWASP Mindset:** Prevent Injection, XSS, and Broken Auth.
 * **Data Scrubbing:** Mask PII (emails, tokens, IDs) in logs. No secrets in code.
 * **Least Privilege:** Apply to all service accounts and logic permissions.
+* **Error Messages to Clients:** Never expose stack traces, internal paths, or SQL errors in API responses. Log detail server-side; return generic messages to clients.
+* **Pre-Commit Checklist:** Before any commit: no hardcoded secrets, all inputs validated, SQL injection prevented (parameterized queries), auth/authz verified, error messages don't leak internals.
 
 ## 8) Performance & Resource Management
 * **Big O Awareness:** Optimize time/space complexity for collections and algorithms.
@@ -130,8 +139,14 @@ These rules apply to every Java/Spring Boot task unless explicitly overridden.
 ## Code Quality
 * Maximum method length: 20 lines. If longer, extract a method.
 * Maximum class length: 300 lines. If longer, extract a class or split responsibilities.
+* Maximum file length: 800 lines absolute ceiling. Target 200-400.
 * No magic numbers — use named constants or `enum` values.
 * Prefer `record` for immutable data carriers (Java 16+). Prefer `sealed interface` for closed hierarchies (Java 17+).
+
+## API Response Envelope
+* Use a consistent `ApiResponse<T>` wrapper for all REST endpoints.
+* Include: `success` (boolean), `data` (nullable on error), `error` (nullable on success).
+* Never return raw entities or bare error strings — always wrap in the envelope.
 
 ## 16) Repository Structure
 * **`agents/`** — Custom agent profiles (`.agent.md` files). Each agent has YAML frontmatter (`name`, `description`, `tools`, `model`) and prose instructions. Invoke agents by name to delegate specialized work.
