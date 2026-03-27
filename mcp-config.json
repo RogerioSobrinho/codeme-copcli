@@ -11,7 +11,7 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"],
       "env": {
-        "MEMORY_FILE_PATH": "~/.copilot/memory.jsonl"
+        "MEMORY_FILE_PATH": "__HOME__/.copilot/memory.jsonl"
       }
     }
   }

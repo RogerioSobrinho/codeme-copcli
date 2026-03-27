@@ -153,16 +153,39 @@ if [ ${#PRESERVED[@]} -gt 0 ]; then
   echo ""
 fi
 
-# ─── 3. Handle MCP config (rename existing to .old) ──────────────────────────
+# ─── 3. Handle MCP config (rename existing to .old, expand $HOME) ─────────────
 MCP_DEST="$TARGET_DIR/mcp-config.json"
 if [ -f "$MCP_DEST" ]; then
-  cp "$MCP_DEST" "${MCP_DEST}.old"
-  warn "mcp-config.json  → renamed existing to mcp-config.json.old"
+  # Only rename if the file wasn't deployed by us (check for our expanded path)
+  if ! grep -q "$HOME/.copilot/memory.jsonl" "$MCP_DEST" 2>/dev/null; then
+    cp "$MCP_DEST" "${MCP_DEST}.old"
+    warn "mcp-config.json  → renamed existing to mcp-config.json.old"
+  fi
 fi
 
 # ─── 4. Deploy root files ─────────────────────────────────────────────────────
 ROOT_UPDATED=0
 for file in "${ROOT_FILES[@]}"; do
+  # mcp-config.json: always deploy (diff will never match due to __HOME__ expansion)
+  if [ "$file" = "mcp-config.json" ]; then
+    local_tmp=$(mktemp)
+    if get_file "$file" > "$local_tmp" 2>/dev/null; then
+      sed "s|__HOME__|$HOME|g" "$local_tmp" > "$local_tmp.expanded"
+      if [ -f "$TARGET_DIR/$file" ] && diff -q "$local_tmp.expanded" "$TARGET_DIR/$file" &>/dev/null; then
+        rm -f "$local_tmp" "$local_tmp.expanded"
+      else
+        mv "$local_tmp.expanded" "$TARGET_DIR/$file"
+        rm -f "$local_tmp"
+        success "$file  (MEMORY_FILE_PATH → $HOME/.copilot/memory.jsonl)"
+        ((ROOT_UPDATED++)) || true
+      fi
+    else
+      rm -f "$local_tmp"
+      error "Failed to get: $file"
+    fi
+    continue
+  fi
+
   if deploy_file "$file" "$TARGET_DIR/$file" "$file"; then
     success "$file"
     ((ROOT_UPDATED++)) || true
