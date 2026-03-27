@@ -79,6 +79,60 @@ Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Se
 * **Environment Aware:** Use config/env variables; never hardcode environment-specific values.
 * **Portability:** Code must be portable across Dev, Staging, and Production environments.
 
+---
+
+# Java & Spring Boot Rules
+
+These rules apply to every Java/Spring Boot task unless explicitly overridden.
+
+## Dependency Injection
+* **Constructor injection only.** Never `@Autowired` on fields. Never setter injection unless a framework forces it.
+* If a constructor has > 5 parameters, it is a signal the class has too many responsibilities — split it.
+
+## Transactional Boundaries
+* `@Transactional` belongs on the **service layer**, never on controllers or repositories.
+* Use `readOnly = true` for query methods — reduces lock overhead.
+* Never call a `@Transactional` method from the same class (self-invocation bypasses the proxy).
+
+## Controller Contracts
+* Never expose JPA entities from controllers — always map to DTOs.
+* Always annotate `@RequestBody` parameters with `@Valid`.
+* Never put business logic in controllers — they only translate HTTP to service calls.
+
+## Exception Handling
+* Never swallow checked exceptions with an empty catch block.
+* Always preserve the root cause when wrapping: `new ServiceException("message", cause)`.
+* Use `@ControllerAdvice` for global exception handling — never try-catch in every controller.
+
+## JPA / Database
+* Always specify `fetch = FetchType.LAZY` on `@ManyToOne` and `@OneToMany` — EAGER is a performance trap.
+* Always use projections or DTOs for read-only queries — never load full entities for display.
+* Never use `CascadeType.ALL` without explicit justification — it silently deletes children.
+* Entities are not thread-safe — never share entity instances across threads.
+
+## Security
+* Never log sensitive fields (passwords, tokens, PII). Use `@JsonIgnore` and log sanitized representations.
+* Always validate and sanitize `@RequestParam` and `@PathVariable` inputs at the controller boundary.
+* Prefer `@PreAuthorize` for method-level security over inline `SecurityContextHolder.getContext()` checks.
+
+## Testing
+* Unit tests use `@ExtendWith(MockitoExtension.class)` — not `@SpringBootTest`.
+* Integration tests that need Spring context use `@SpringBootTest` + Testcontainers for real DB/Kafka.
+* Test method names follow the pattern: `methodName_givenContext_expectedBehavior`.
+* Never use `Thread.sleep()` in tests — use `Awaitility` for async assertions.
+
+## Naming
+* Packages: `com.{company}.{domain}.{layer}` — e.g., `com.acme.orders.service`.
+* Classes: PascalCase, noun or noun phrase. No `Manager`, `Helper`, `Utils` suffixes.
+* Methods: camelCase, verb or verb phrase. Boolean methods: `is*`, `has*`, `can*`.
+* Constants: `UPPER_SNAKE_CASE` in `enum` or `static final` fields.
+
+## Code Quality
+* Maximum method length: 20 lines. If longer, extract a method.
+* Maximum class length: 300 lines. If longer, extract a class or split responsibilities.
+* No magic numbers — use named constants or `enum` values.
+* Prefer `record` for immutable data carriers (Java 16+). Prefer `sealed interface` for closed hierarchies (Java 17+).
+
 ## 16) Repository Structure
 * **`agents/`** — Custom agent profiles (`.agent.md` files). Each agent has YAML frontmatter (`name`, `description`, `tools`, `model`) and prose instructions. Invoke agents by name to delegate specialized work.
 * **`skills/`** — Knowledge reference bases. Each skill lives in `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description` only). Load skills for domain-specific reference material during implementation.

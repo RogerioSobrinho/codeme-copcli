@@ -3,12 +3,71 @@ name: continuous-learning
 description: >
   Load when capturing a new architectural decision (ADR), documenting a discovered pattern or
   anti-pattern after solving a complex problem, applying the three-time-rule (promote to
-  standard after solving the same problem 3 times), or at the end of a session to preserve
-  reusable solutions. Triggers on: "document this", "remember this pattern", "write an ADR",
-  "add to our standards", "this keeps coming up".
+  standard after solving the same problem 3 times), tracking an instinct with a confidence
+  score, promoting a recurring instinct to an explicit standard, or at the end of a session
+  to preserve reusable solutions. Triggers on: "document this", "remember this pattern",
+  "write an ADR", "add to our standards", "this keeps coming up", "track this instinct",
+  "I have a feeling about this approach".
 ---
 
-# Continuous Learning
+# Continuous Learning v2
+
+## Instinct System
+
+An **instinct** is an informal heuristic — something you sense is right before you can fully justify it. The instinct system gives instincts a lifecycle: from suspicion to confirmed standard.
+
+### Confidence Score (1–5)
+
+| Score | Meaning |
+|---|---|
+| 1 | Gut feeling, no evidence yet |
+| 2 | One confirming example |
+| 3 | Two confirming examples, pattern forming |
+| 4 | Three+ confirmations across distinct contexts |
+| 5 | Battle-tested, ready for promotion to explicit rule |
+
+**Promotion threshold:** Score ≥ 4 confirmed across **at least 3 distinct contexts** → promote to named pattern in SKILL.md.
+
+**Decay rule:** If an instinct is contradicted by evidence, subtract 2 from the score. If score drops to 0, archive it with the contradiction noted.
+
+### Instinct Template
+
+```markdown
+## Instinct: {Name}
+
+**Heuristic:** [One sentence — what does the instinct say?]
+
+**Confidence:** {1-5} / 5
+
+**Evidence log:**
+| # | Context | Outcome | Score delta |
+|---|---|---|---|
+| 1 | {Where this was applied} | {Worked/Failed/Partial} | +1 |
+
+**Promoted to pattern:** [Link to pattern, or "pending"]
+**Contradictions:** [What evidence challenged this?]
+```
+
+### Example Instinct
+
+```markdown
+## Instinct: Avoid @Transactional on controller layer
+
+**Heuristic:** Controllers that call @Transactional service methods never need @Transactional themselves.
+
+**Confidence:** 5 / 5
+
+**Evidence log:**
+| # | Context | Outcome | Score delta |
+|---|---|---|---|
+| 1 | REST controller calling OrderService.create() | Removing @Transactional from controller fixed unexpected rollback | +1 |
+| 2 | WebMVC POST handler for payment | Controller @Transactional caused timeout extension across HTTP call | +1 |
+| 3 | GraphQL mutation resolver | Field resolved in wrong transaction scope, removing from controller fixed it | +1 |
+
+**Promoted to pattern:** See springboot-patterns.md: "Transactional boundaries"
+```
+
+---
 
 ## Three-Time Rule for Pattern Promotion
 
@@ -16,9 +75,9 @@ A solution becomes a **pattern** (worth generalizing) when the same approach is 
 
 | Occurrence | Action |
 |---|---|
-| 1st | Implement the solution; note it in session memory |
-| 2nd | Recognize the repetition; evaluate generalizability |
-| 3rd | Promote to a named pattern; document in SKILL.md |
+| 1st | Implement the solution; note as instinct (score: 2) |
+| 2nd | Recognize the repetition; update instinct (score: 3–4) |
+| 3rd | Promote to a named pattern; document in SKILL.md (score: 5) |
 
 **Trigger questions for promotion:**
 1. Could a different developer use this in isolation?
