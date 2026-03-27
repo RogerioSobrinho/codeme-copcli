@@ -1,6 +1,11 @@
 ---
 name: search-first
-description: Research-before-coding methodology for Spring Boot. Covers 5-layer search order, grep patterns per layer, dependency cost check, and anti-patterns to avoid. Load before writing any new implementation to ensure solutions reuse existing code and native framework capabilities.
+description: >
+  Load before implementing any new Java class, Spring @Service, @Component, or utility method.
+  Prevents duplicating Spring Boot auto-configurations, existing business logic, or library
+  capabilities. Apply the grep-before-write rule: search the codebase for existing
+  implementations before adding new code. Especially relevant when the request involves
+  "add a", "create a", "implement", "write a method for", or "build a new".
 ---
 
 # Search-First Methodology

@@ -1,6 +1,11 @@
 ---
 name: continuous-learning
-description: Knowledge capture and evolution protocol for this agent system. Covers the three-time rule for pattern promotion, pattern/anti-pattern templates, end-of-session review protocol, ADR template, and storage locations. Load when capturing a new reusable pattern or at the end of a coding session.
+description: >
+  Load when capturing a new architectural decision (ADR), documenting a discovered pattern or
+  anti-pattern after solving a complex problem, applying the three-time-rule (promote to
+  standard after solving the same problem 3 times), or at the end of a session to preserve
+  reusable solutions. Triggers on: "document this", "remember this pattern", "write an ADR",
+  "add to our standards", "this keeps coming up".
 ---
 
 # Continuous Learning

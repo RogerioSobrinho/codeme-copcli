@@ -1,6 +1,11 @@
 ---
 name: postgres-patterns
-description: PostgreSQL optimization for Spring Boot apps. Covers indexing strategies, EXPLAIN ANALYZE, HikariCP tuning, partitioning, JSONB, locking patterns, and zero-downtime DDL. Load when optimizing database performance or configuring PostgreSQL.
+description: >
+  Load when analyzing slow PostgreSQL queries with EXPLAIN (ANALYZE, BUFFERS), tuning HikariCP
+  (maximumPoolSize, connectionTimeout, idleTimeout, keepaliveTime), creating B-tree, GIN, or
+  partial indexes, using JSONB operators (@>, ?, #>>), diagnosing pg_stat_activity blocking or
+  long-running transactions, partitioning large tables (PARTITION BY RANGE), or planning
+  zero-downtime DDL on large PostgreSQL tables (concurrent index creation, lock timeouts).
 ---
 
 # PostgreSQL Patterns

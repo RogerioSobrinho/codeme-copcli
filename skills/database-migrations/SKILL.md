@@ -1,6 +1,11 @@
 ---
 name: database-migrations
-description: Database migration patterns for Spring Boot using Flyway and Liquibase. Covers naming conventions, zero-downtime DDL, data migrations, rollback strategy, multi-tenant schemas, and testing migrations. Load when working with Flyway, Liquibase, or schema changes.
+description: >
+  Load when creating Flyway migration scripts (V{n}__{description}.sql, naming conventions,
+  flyway.locations), writing Liquibase changesets (databaseChangeLog, addColumn, createIndex),
+  planning zero-downtime DDL (expand-contract pattern, ADD COLUMN nullable first, backfill,
+  then NOT NULL), multi-tenant schema routing, testing migrations with @FlywayTest, or
+  diagnosing FlywayException / migration checksum mismatch errors.
 ---
 
 # Database Migrations

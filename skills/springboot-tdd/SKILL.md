@@ -1,6 +1,11 @@
 ---
 name: springboot-tdd
-description: TDD workflow guide for Spring Boot. Covers JUnit 5, Mockito, @WebMvcTest/@DataJpaTest slices, Testcontainers, MockMvc, Spring Cloud Contract. Load when writing tests or practicing TDD in Spring Boot projects.
+description: >
+  Load when writing JUnit 5 tests, slicing with @WebMvcTest + MockMvc or @DataJpaTest +
+  @AutoConfigureTestDatabase, using Mockito (@MockBean, @InjectMocks, given/when/then BDD),
+  spinning up Testcontainers (@Container, @Testcontainers) for PostgreSQL or Kafka,
+  testing @KafkaListener consumers, following TDD red-green-refactor, or debugging
+  ApplicationContext load failures in @SpringBootTest.
 ---
 
 # Spring Boot TDD

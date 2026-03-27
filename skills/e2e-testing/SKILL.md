@@ -1,6 +1,11 @@
 ---
 name: e2e-testing
-description: End-to-end and integration testing patterns for Spring Boot. Covers REST Assured base class, Testcontainers singleton pattern, WireMock, Spring Cloud Contract, parallel execution, Gatling load tests. Load when writing integration or E2E tests.
+description: >
+  Load when writing @SpringBootTest end-to-end tests using REST Assured (given().when().then()
+  fluent API), managing Testcontainers lifecycle with singleton pattern (@Container static
+  field), stubbing external HTTP services with WireMock (@AutoConfigureWireMock), writing
+  consumer-driven Spring Cloud Contracts (.groovy or .yml), running Gatling load simulations,
+  or diagnosing port-binding conflicts and context reload overhead in integration test suites.
 ---
 
 # E2E Testing

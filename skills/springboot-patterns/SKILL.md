@@ -1,6 +1,11 @@
 ---
 name: springboot-patterns
-description: Spring Boot best practices reference. Covers layered architecture (Controller→Service→Repository→Domain), JPA patterns, Spring Security, async, caching, exception handling, transactions, Bean Validation, observability, and messaging. Load when writing or reviewing any Spring Boot code.
+description: >
+  Load when structuring Spring Boot packages (Controller/Service/Repository/Domain), writing
+  @Service use-case classes, configuring @Async thread pools, applying @Cacheable/@CacheEvict
+  with Redis, writing @RestControllerAdvice exception handlers, defining @Transactional
+  propagation boundaries (REQUIRED/REQUIRES_NEW/readOnly), adding @Valid Bean Validation,
+  configuring MDC structured logging, or setting up @KafkaListener idempotent consumers.
 ---
 
 # Spring Boot Patterns

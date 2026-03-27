@@ -1,6 +1,11 @@
 ---
 name: iterative-retrieval
-description: Progressive context-loading strategy for large codebases. Covers Layer 1/2/3 expansion, stop conditions, token budget management, grep-before-read rule, and context pruning. Load when working in a large codebase to avoid loading unnecessary files into context.
+description: >
+  Load when navigating a Java codebase with more than ~50 classes, when file reads are
+  causing context overflow, or when exploration is slow and unfocused. Provides the
+  grep-before-read rule, 3-layer progressive expansion strategy, stop conditions, and
+  token budget management to keep context lean and targeted in large Spring Boot monorepos
+  or multi-module Maven projects.
 ---
 
 # Iterative Retrieval

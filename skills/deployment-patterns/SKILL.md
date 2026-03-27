@@ -1,6 +1,12 @@
 ---
 name: deployment-patterns
-description: Deployment patterns for Spring Boot. Covers blue-green, canary, rolling updates, Kubernetes liveness/readiness/startup probes, graceful shutdown, zero-downtime checklist, ConfigMaps/Secrets, resource requests/limits. Load when planning or reviewing deployments.
+description: >
+  Load when writing Kubernetes Deployment/Service/Ingress manifests, configuring liveness,
+  readiness, and startup probes for Spring Boot Actuator (/actuator/health/liveness,
+  /actuator/health/readiness), planning blue-green or canary deployments, setting HPA
+  minReplicas/maxReplicas, mapping ConfigMap/Secret to spring.config.import or env vars,
+  implementing graceful shutdown (server.shutdown=graceful, spring.lifecycle.timeout-per-
+  shutdown-phase), or calculating resource requests/limits for JVM workloads.
 ---
 
 # Deployment Patterns

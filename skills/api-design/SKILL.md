@@ -1,6 +1,11 @@
 ---
 name: api-design
-description: REST API design reference for Spring Boot. Covers resource naming, HTTP methods, versioning, cursor-based pagination, RFC 7807 error responses, OpenAPI/Swagger, idempotency, HATEOAS, rate limiting. Load when designing or reviewing REST APIs.
+description: >
+  Load when designing or reviewing REST endpoints (@GetMapping/@PostMapping/@PutMapping/
+  @PatchMapping/@DeleteMapping), HTTP status codes, URL resource naming, API versioning
+  strategies (/v1/, Accept-Version header), cursor-based or offset pagination, RFC 7807
+  ProblemDetail error responses, OpenAPI/Swagger annotations (@Operation, @ApiResponse,
+  @Schema), idempotency-key headers, or HATEOAS links with Spring HATEOAS.
 ---
 
 # API Design

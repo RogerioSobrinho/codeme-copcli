@@ -1,6 +1,10 @@
 ---
 name: springboot-verification
-description: Verification loop patterns for Spring Boot. Defines ordered quality gates: compile → unit test → integration test → contract test → security scan → coverage check. Load when setting up CI or running quality checks.
+description: >
+  Load when running the Spring Boot quality pipeline — mvn test, JaCoCo coverage reporting
+  (jacoco:report, jacoco:check with minimumRatio), Checkstyle or SpotBugs static analysis,
+  OWASP dependency-check:check, Spring Cloud Contract verifier, or configuring GitHub Actions
+  CI workflow to enforce quality gates (coverage threshold, zero-CVE policy) on pull requests.
 ---
 
 # Spring Boot Verification

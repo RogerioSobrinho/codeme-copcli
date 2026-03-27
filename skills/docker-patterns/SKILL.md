@@ -1,6 +1,11 @@
 ---
 name: docker-patterns
-description: Docker patterns for Spring Boot. Covers multi-stage Dockerfile, JVM container tuning, Docker Compose for local dev, health checks, container security, layer optimization with Spring Boot layertools. Load when containerizing a Spring Boot app.
+description: >
+  Load when writing a Dockerfile for Spring Boot, building multi-stage Docker images (FROM
+  eclipse-temurin as builder), tuning JVM heap for containers (-Xmx, -XX:MaxRAMPercentage,
+  -XX:+UseContainerSupport), writing Docker Compose for local dev with depends_on and
+  healthcheck, optimizing layer caching with Spring Boot layertools (jarmode layertools),
+  or fixing container security issues (non-root USER, read-only filesystem, no-new-privileges).
 ---
 
 # Docker Patterns

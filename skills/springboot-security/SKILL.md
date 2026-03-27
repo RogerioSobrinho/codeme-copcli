@@ -1,6 +1,11 @@
 ---
 name: springboot-security
-description: Spring Security 6 reference for Spring Boot. Covers SecurityFilterChain, JWT, OAuth2 resource server, method security, CSRF, CORS, password encoding, and security testing. Load when configuring security or reviewing authentication/authorization code.
+description: >
+  Load when configuring SecurityFilterChain, writing JwtAuthenticationFilter or
+  OncePerRequestFilter, setting up OAuth2 resource server (jwt.issuer-uri, jwk-set-uri),
+  applying @PreAuthorize/@PostAuthorize method security, configuring CorsConfigurationSource,
+  CSRF policy for stateless APIs, BCryptPasswordEncoder strength, or writing security tests
+  with @WithMockUser, @WebMvcTest, and Spring Security Test.
 ---
 
 # Spring Boot Security

@@ -1,6 +1,11 @@
 ---
 name: jpa-patterns
-description: JPA/Hibernate patterns for Spring Boot. Covers N+1 prevention, projections, pagination, custom queries, entity lifecycle, auditing, optimistic locking, and common pitfalls. Load when working with Spring Data JPA or Hibernate.
+description: >
+  Load when writing @Entity or @Repository classes, debugging LazyInitializationException or
+  could-not-initialize-proxy errors, solving N+1 query problems, using @EntityGraph, @Query
+  with JPQL, FetchType.LAZY/EAGER, @OneToMany/@ManyToOne/@ManyToMany, Pageable/Page/Slice
+  pagination, @Version optimistic locking, @MappedSuperclass auditing, or
+  JpaSpecificationExecutor dynamic queries.
 ---
 
 # JPA Patterns
