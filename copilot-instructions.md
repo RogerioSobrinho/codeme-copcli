@@ -1,5 +1,8 @@
 # Global Copilot Instructions (Ultra-Senior & Architect Level)
 
+**Available agents:** `/new-feature`, `/explore`, `/code-review`, `/new-project`, `/fix`, `/secure`, `/refactor`
+
+
 ## 0) Core Objective
 Deliver high-performance, production-ready code. Prioritize **Clean Code**, **Security**, and **Scalability**. Every line must be professional, maintainable, and strictly necessary.
 

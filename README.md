@@ -1,108 +1,102 @@
 # Copilot CLI Skills Template
 
-A production-ready template for GitHub Copilot CLI custom agents and knowledge skills, engineered for Spring Boot microservices development at an ultra-senior level.
+A production-ready template for GitHub Copilot CLI custom agents and knowledge skills, engineered for Java/Spring Boot development at an ultra-senior level.
 
-## Structure
+## 7 Scenario Agents
 
-```
-.
-├── agents/          # Custom agent profiles (.agent.md)
-├── skills/          # Knowledge reference bases (SKILL.md per subdirectory)
-└── copilot-instructions.md   # Global engineering principles
-```
+Agents are organized around **what you want to do**, not internal pipeline steps.
 
-## Agents
+| When you say... | Use |
+|---|---|
+| "I want to build X" | `/new-feature` |
+| "Explain this codebase" / "Where is X" | `/explore` |
+| "Review my changes" / "Review this PR" | `/code-review` |
+| "Start a new Spring Boot service" | `/new-project` |
+| "Something is broken" / "Fix the build" | `/fix` |
+| "Audit security" / "Is this safe?" | `/secure` |
+| "Clean up this code" / "This is too complex" | `/refactor` |
 
-22 specialized agents covering the complete software delivery lifecycle.
+### `/new-feature` — Full Feature Lifecycle
+Model: `claude-opus-4-5`
 
-| Agent | Model | Role |
-|---|---|---|
-| `orchestrator` | opus | Manages workflow execution across all agents |
-| `architect` | opus | System design and ADR authoring |
-| `domain-modeler` | opus | DDD tactical patterns and domain model design |
-| `agent-creator` | opus | Meta-agent for creating new agents and skills |
-| `requirement-analyst` | sonnet | Structures requirements as actionable specifications |
-| `impact-analyst` | sonnet | Blast radius analysis before changes |
-| `test-designer` | sonnet | TDD test pyramid strategy and test plan |
-| `test-quality-reviewer` | sonnet | Audits test suite coverage and quality |
-| `implementer` | sonnet | Writes production-grade Spring Boot code |
-| `integration-reviewer` | sonnet | REST and Kafka contract validation |
-| `data-integrity-reviewer` | sonnet | DB constraints, migrations, transaction safety |
-| `concurrency-reviewer` | sonnet | Thread safety and race condition analysis |
-| `performance-profiler` | sonnet | N+1, caching, algorithm complexity |
-| `security-reviewer` | sonnet | OWASP Top 10 audit |
-| `resilience-reviewer` | sonnet | Circuit breakers, retries, bulkheads |
-| `observability-designer` | sonnet | MDC, Micrometer, OpenTelemetry setup |
-| `code-reviewer` | sonnet | Bugs, logic errors, security — signal only |
-| `release-risk-assessor` | sonnet | GO/NO-GO decision from all review reports |
-| `cicd-designer` | sonnet | GitHub Actions, Docker, Kubernetes pipelines |
-| `codebase-explorer` | sonnet | Produces structured context.json |
-| `java-build-resolver` | sonnet | Maven/Gradle build and compilation failures |
-| `doc-writer` | haiku | Codemaps, endpoint inventories, changelogs |
+Handles everything: explores the codebase, asks clarifying requirements, proposes 3 architectural options (marks one RECOMMENDED), writes an implementation plan, implements via TDD (test first, then code), reviews its own changes for bugs and security, reports what was done. You never need to switch to another agent mid-feature.
 
-## Skills (Knowledge Bases)
+### `/explore` — Codebase Navigator
+Model: `claude-sonnet-4-5` · Tools: read, search, shell
 
-14 reference bases loaded on demand by agents.
+Runs structural commands first (`find`, `grep`, `git log`), then answers your question based on actual source code. Produces codemaps: architecture layers, key bounded contexts, entry points, main request flows. Rule: scan first, answer second. Never asks you to provide context it can discover itself.
+
+### `/code-review` — Signal-Only Code Review
+Model: `claude-sonnet-4-5` · Tools: read, search, shell
+
+Reviews `git diff --staged` (or any specified file/diff). Reports **only**: bugs, security vulnerabilities, logic errors, architecture violations. Never comments on style, naming, or formatting. Every finding: file location + root cause + concrete fix. Ends with APPROVED / APPROVED WITH COMMENTS / CHANGES REQUIRED.
+
+### `/new-project` — Project Bootstrapper
+Model: `claude-opus-4-5`
+
+Gathers requirements, proposes 3 architectural approaches (layered monolith / modular monolith / microservices), generates the complete scaffold: `pom.xml`, package structure, `application.yml`, `Dockerfile`, `docker-compose.yml`, GitHub Actions CI, base exception handling. Applies 12-Factor App and Clean Architecture from day 1.
+
+### `/fix` — Build and Test Failure Resolver
+Model: `claude-sonnet-4-5` · Tools: read, edit, write, search, shell
+
+Runs the build immediately (no questions first). Classifies: compilation error / dependency conflict / annotation processor issue / Spring context failure / test failure. Applies a surgical fix, re-runs to verify. Max 3 attempts with different approaches.
+
+### `/secure` — Security Auditor
+Model: `claude-sonnet-4-5` · Tools: read, search, shell
+
+Runs `mvn dependency-check:check`, then reviews: Spring Security config, authentication/authorization, input validation, secrets in source/config, CORS/CSRF. Maps every finding to an OWASP Top 10 category with severity and concrete fix.
+
+### `/refactor` — Behavior-Preserving Refactor
+Model: `claude-sonnet-4-5` · Tools: read, edit, write, search, shell
+
+Maps blast radius (callers, tests), proposes 3 refactoring approaches with risk levels, applies incrementally with compile verification after each step, runs tests to confirm behavior is preserved. Rule: refactor in small verified steps. Never break what works.
+
+---
+
+## 14 Knowledge Skills
+
+Skills are reference material loaded automatically when relevant.
 
 | Skill | Contents |
 |---|---|
-| `springboot-patterns` | Core Spring Boot patterns: configuration, exception handling, validation, scheduling |
-| `springboot-tdd` | Test pyramid, Testcontainers, MockMvc, WireMock, test slices |
-| `springboot-security` | Spring Security 6, JWT, RBAC, method security, CORS |
-| `springboot-verification` | Pre-commit checklist, architecture tests (ArchUnit), quality gates |
-| `jpa-patterns` | JPA/Hibernate best practices, N+1 prevention, projections, auditing |
-| `postgres-patterns` | PostgreSQL indexing, JSONB, window functions, connection pooling |
-| `api-design` | REST naming, versioning, cursor pagination, RFC 7807, OpenAPI, idempotency |
-| `database-migrations` | Flyway/Liquibase, zero-downtime DDL, rollback strategy |
-| `docker-patterns` | Multi-stage Dockerfile, JVM container tuning, Docker Compose, health checks |
-| `deployment-patterns` | Blue-green, canary, rolling updates, K8s probes, graceful shutdown |
-| `e2e-testing` | REST Assured, Testcontainers singleton, WireMock, Spring Cloud Contract, Gatling |
-| `search-first` | 5-layer search order, grep patterns, dependency cost check |
-| `continuous-learning` | Three-time rule, pattern templates, ADR format, session review protocol |
-| `iterative-retrieval` | Progressive context loading, token budget, grep-before-read rule |
+| `springboot-patterns` | Core Spring Boot patterns: layers, JPA, security, async, caching, transactions |
+| `springboot-tdd` | Test pyramid: `@WebMvcTest`, `@DataJpaTest`, Testcontainers, MockMvc, Spring Cloud Contract |
+| `springboot-security` | Spring Security 6, JWT, OAuth2 resource server, RBAC, CORS, CSRF |
+| `springboot-verification` | Quality gates: compile → unit → integration → coverage (JaCoCo) → mutation (PITest) → security scan |
+| `jpa-patterns` | N+1 prevention, projections, pagination, entity design, auditing, optimistic locking |
+| `postgres-patterns` | Indexes, EXPLAIN ANALYZE, HikariCP tuning, JSONB, partitioning, zero-downtime DDL |
+| `api-design` | REST naming, HTTP semantics, versioning, cursor pagination, RFC 7807, idempotency |
+| `database-migrations` | Flyway/Liquibase, zero-downtime DDL, data migration batching, rollback strategy |
+| `docker-patterns` | Multi-stage Dockerfile, JVM container tuning, Docker Compose with health checks |
+| `deployment-patterns` | Blue-green, canary, rolling updates, K8s probes, graceful shutdown, resource limits |
+| `e2e-testing` | REST Assured base class, Testcontainers singleton, WireMock, Spring Cloud Contract, Gatling |
+| `search-first` | 5-layer search protocol, grep patterns, dependency cost check, anti-patterns list |
+| `continuous-learning` | Three-time rule, pattern/anti-pattern templates, ADR format, end-of-session protocol |
+| `iterative-retrieval` | Progressive context loading, token budget guide, grep-before-read rule, pruning checklist |
 
-## Workflow Usage
+---
 
-The `orchestrator` agent manages three built-in workflow sequences. Invoke by starting a conversation with the orchestrator:
-
-### New Feature
-```
-@orchestrator I need to add a payment processing feature to the orders service.
-```
-Sequence: `codebase-explorer → requirement-analyst → impact-analyst → architect → domain-modeler → test-designer → implementer → integration-reviewer → test-quality-reviewer → concurrency-reviewer → performance-profiler → security-reviewer → resilience-reviewer → observability-designer → data-integrity-reviewer → code-reviewer → release-risk-assessor → cicd-designer → doc-writer`
-
-### Refactoring
-```
-@orchestrator Refactor the OrderService to use domain events.
-```
-Sequence: `codebase-explorer → impact-analyst → test-designer → test-quality-reviewer → architect → domain-modeler → implementer → integration-reviewer → concurrency-reviewer → performance-profiler → security-reviewer → resilience-reviewer → observability-designer → data-integrity-reviewer → code-reviewer → release-risk-assessor → cicd-designer → doc-writer`
-
-### New Project
-```
-@orchestrator Bootstrap a new Spring Boot 3 service for inventory management.
-```
-Sequence: `codebase-explorer → requirement-analyst → architect → domain-modeler → test-designer → implementer → integration-reviewer → test-quality-reviewer → concurrency-reviewer → performance-profiler → security-reviewer → resilience-reviewer → observability-designer → data-integrity-reviewer → code-reviewer → release-risk-assessor → cicd-designer → doc-writer`
-
-## Runtime Artifacts
-
-All agents write outputs to `.copilot-runtime/` (git-ignored):
+## Repository Structure
 
 ```
-.copilot-runtime/
-├── artifacts/       # context.json, requirements.md, domain-model.md
-├── analysis/        # impact-report.md, security-report.md, performance-report.md
-├── decisions/       # ADR-NNN files
-├── tests/           # test-plan.md, test-quality-report.md
-└── summaries/       # documentation outputs
+.
+├── agents/
+│   ├── new-feature.agent.md
+│   ├── explore.agent.md
+│   ├── code-review.agent.md
+│   ├── new-project.agent.md
+│   ├── fix.agent.md
+│   ├── secure.agent.md
+│   └── refactor.agent.md
+├── skills/
+│   ├── springboot-patterns/SKILL.md
+│   ├── springboot-tdd/SKILL.md
+│   └── ... (14 total)
+└── copilot-instructions.md
 ```
 
-## Adding Agents and Skills
+## Deploy
 
-Use the `agent-creator` meta-agent:
+```bash
+cp -r /path/to/copilot-cli-skills-template/. ~/.copilot/
 ```
-@agent-creator Create a new agent for GraphQL schema design.
-```
-
-Or follow the conventions manually:
-- **Agent:** Create `agents/<name>.agent.md` with YAML frontmatter (`name`, `description`, `tools`, `model`) + prose instructions.
-- **Skill:** Create `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description` only) + reference material.
