@@ -65,7 +65,18 @@ See the `skill-authoring` skill for a step-by-step guide: paste any internal tex
 
 ## Modular Instructions (15 files)
 
-Instructions are always-on rules loaded automatically. Toggle individual files via `/instructions` in Copilot CLI. Requires `COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions` in your shell.
+Instructions are always-on rules loaded by Copilot CLI when relevant. Toggle individual files via `/instructions`.
+
+### How instructions are loaded — two scopes
+
+| Scope | Path | Activation |
+|-------|------|------------|
+| **Per-project** | `{project}/.github/instructions/*.instructions.md` | Auto-loaded in any git repo that has this directory |
+| **Global (all projects)** | `~/.copilot/instructions/*.instructions.md` | Requires `COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions` in shell config |
+
+`install.sh` deploys to `~/.copilot/instructions/` (not `~/.copilot/.github/instructions/` — that path would only work while your cwd is inside `~/.copilot/` itself, not in your projects).
+
+The `.github/instructions/` directory in this repo is the **source** used by `install.sh`. For project-level instructions, copy specific files from `.github/instructions/` into your project's `.github/instructions/`.
 
 ### Layer 1 — Language-agnostic (active in every project)
 

@@ -1,10 +1,41 @@
 # Performance & Observability
 
-## Performance
+## Parallel Tool Execution (CRITICAL)
 
-- **Big O Awareness:** Optimize time/space complexity for collections and algorithms. Identify O(n²) loops before they hit production.
-- **Resource Leaks:** Explicitly close streams, connections, and listeners. Use try-with-resources or `using` blocks.
-- **Efficiency:** Be mindful of CPU/Memory allocations in hot paths.
+**Always parallelize independent operations.** Sequential tool calls where there is no dependency is a performance bug.
+
+### ✅ PARALLEL — call in one response:
+- Reading multiple files (no dependency between them)
+- Editing different files (no dependency between edits)
+- Launching multiple explore/search agents for different questions
+- Running grep + glob + view simultaneously
+- Creating multiple new files
+
+```
+# CORRECT — one response, 3 parallel tool calls:
+[read FileA] [read FileB] [read FileC]
+
+# CORRECT — one response, 2 parallel edits:
+[edit README.md] [edit install.sh]
+```
+
+### ❌ SEQUENTIAL — must wait for previous result:
+- Read file A → then use A's content to edit file B
+- Run build → then read the error output to fix code
+- Ask user a question → then act on the answer
+- Launch agent → then pass its output to the next agent
+
+```
+# CORRECT — sequential because B depends on A:
+[read FileA]  →  [edit FileB using A's content]
+```
+
+### Key principle
+> If you can describe two operations without mentioning each other, they can run in parallel.
+
+When exploring a codebase: grep, glob, and view multiple files simultaneously — do not read one file, then decide to read the next.
+
+## Performance
 
 ## Structured Logging
 
