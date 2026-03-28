@@ -116,6 +116,24 @@ public Order getOrder(UUID orderId) { ... }
 
 ---
 
+## SQL Injection Prevention
+
+```java
+// BAD — string concatenation in native query
+@Query(value = "SELECT * FROM users WHERE name = '" + name + "'", nativeQuery = true)
+
+// GOOD — parameterized native query
+@Query(value = "SELECT * FROM users WHERE name = :name", nativeQuery = true)
+List<User> findByName(@Param("name") String name);
+
+// GOOD — Spring Data derived query (auto-parameterized, no injection surface)
+List<User> findByEmailAndActiveTrue(String email);
+```
+
+**Rule:** Never concatenate user input into JPQL or SQL strings. Spring Data derived queries and `:param` bindings are the only safe options.
+
+---
+
 ## CSRF
 
 | Scenario | Setting | Reason |
@@ -161,6 +179,56 @@ boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
 
 ---
 
+## Secrets Management
+
+```yaml
+# BAD — hardcoded in application.yml
+spring:
+  datasource:
+    password: mySecretPassword123
+
+# GOOD — environment variable placeholder
+spring:
+  datasource:
+    password: ${DB_PASSWORD}
+
+# GOOD — Spring Cloud Vault integration
+spring:
+  cloud:
+    vault:
+      uri: https://vault.example.com
+      token: ${VAULT_TOKEN}
+```
+
+**Rules:** No secrets in source control. Use env vars for simple deployments, Vault/AWS Secrets Manager for production. Rotate credentials regularly. Never log secret values — scrub or mask before any log statement.
+
+---
+
+## Security Headers
+
+```java
+http
+    .headers(headers -> headers
+        .contentSecurityPolicy(csp -> csp
+            .policyDirectives("default-src 'self'"))
+        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+        .xssProtection(Customizer.withDefaults())
+        .referrerPolicy(rp -> rp
+            .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)));
+```
+
+Minimum required headers for all HTTP responses:
+
+| Header | Value | Purpose |
+|---|---|---|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME sniffing |
+| `X-Frame-Options` | `SAMEORIGIN` | Prevent clickjacking |
+| `Strict-Transport-Security` | `max-age=31536000` | Enforce HTTPS |
+| `Content-Security-Policy` | `default-src 'self'` | Prevent XSS/injection |
+| `Referrer-Policy` | `no-referrer` | Prevent referrer leakage |
+
+---
+
 ## Security Testing with @WithMockUser
 
 ```java
@@ -194,13 +262,57 @@ class OrderControllerSecurityTest {
 
 ---
 
+## File Uploads
+
+```java
+@PostMapping("/upload")
+public ResponseEntity<String> upload(@RequestParam MultipartFile file) {
+    // Validate size
+    if (file.getSize() > 10 * 1024 * 1024) {
+        throw new IllegalArgumentException("File exceeds 10 MB limit");
+    }
+    // Validate content type — do NOT trust the client-supplied MIME type alone
+    String contentType = file.getContentType();
+    if (!Set.of("image/jpeg", "image/png", "application/pdf").contains(contentType)) {
+        throw new IllegalArgumentException("Unsupported file type");
+    }
+    // Validate extension
+    String filename = StringUtils.cleanPath(file.getOriginalFilename());
+    if (filename.contains("..")) {
+        throw new IllegalArgumentException("Invalid filename");
+    }
+    // Store outside web root; never in a path derived from user input
+    storageService.store(file);
+    return ResponseEntity.ok("Uploaded");
+}
+```
+
+**Rules:** Validate size, MIME type, and extension server-side. Store outside the web root. Use a random UUID as the stored filename — never the original. Virus-scan in high-risk environments.
+
+---
+
+## Dependency Security
+
+- Run OWASP Dependency-Check or Snyk in CI — fail builds on known CVEs
+- Keep Spring Boot and Spring Security on the current support branch
+- Subscribe to [Spring Security advisories](https://spring.io/security) and patch promptly
+- Use `./mvnw dependency:tree` regularly to spot transitive vulnerabilities
+
+---
+
 ## OWASP Checklist
 
-- No plaintext secrets in `application.yml` — use environment variables
+- No plaintext secrets in `application.yml` — use environment variables or Vault
 - No `permitAll()` on non-public endpoints
 - No `allowedOrigins("*")` in production
 - JWT secret ≥ 256 bits; prefer asymmetric keys
 - BCrypt strength ≥ 12
 - Actuator secured: `health` and `info` public only
 - `X-Content-Type-Options`, `X-Frame-Options`, and `Strict-Transport-Security` headers set
+- Content-Security-Policy configured
 - Input validated at controller boundary with `@Valid`
+- No string-concatenated SQL — parameterized queries only
+- File uploads validated (size, MIME, extension) and stored outside web root
+- Sensitive data (passwords, tokens, PAN) never logged
+- OWASP Dependency-Check / Snyk passing in CI
+- Rate limiting applied to authentication and expensive endpoints

@@ -8,6 +8,9 @@
 # Safe to run multiple times (idempotent).
 # Preserved: ~/.copilot/skills/company-*/  (company-specific, never overwritten)
 # MCP config: existing mcp-config.json renamed to mcp-config.json.old
+#
+# Instructions are deployed to ~/.copilot/instructions/ for modular toggle support.
+# Set COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions in your shell to activate globally.
 
 set -euo pipefail
 
@@ -25,8 +28,32 @@ error()   { echo -e "${RED}[err]${NC}   $*"; }
 # ─── File manifest ─────────────────────────────────────────────────────────────
 # All files that compose the template. Update this list when adding new files.
 ROOT_FILES=(
-  "copilot-instructions.md"
   "mcp-config.json"
+)
+
+# Modular instruction files deployed to ~/.copilot/instructions/
+# Activate globally by setting: COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions
+# Toggle per-project via: /instructions  (in Copilot CLI)
+INSTRUCTIONS=(
+  # Layer 1 — Language-agnostic (always active in every project)
+  "core.instructions.md"
+  "engineering.instructions.md"
+  "security.instructions.md"
+  "testing.instructions.md"
+  "git.instructions.md"
+  "performance.instructions.md"
+  "multi-option.instructions.md"
+  "agents.instructions.md"
+  # Layer 2 — Java / Spring Boot (toggle off in non-Java projects)
+  "java.instructions.md"
+  "java-spring.instructions.md"
+  "java-security.instructions.md"
+  "java-testing.instructions.md"
+  # Layer 3 — TypeScript / Angular (toggle off in non-Angular projects)
+  "typescript.instructions.md"
+  "angular.instructions.md"
+  # Layer 4 — Flutter / Dart (toggle off in non-Flutter projects)
+  "flutter.instructions.md"
 )
 
 AGENTS=(
@@ -37,8 +64,10 @@ AGENTS=(
   "init-project.agent.md"
   "new-feature.agent.md"
   "new-project.agent.md"
+  "planner.agent.md"
   "refactor.agent.md"
   "secure.agent.md"
+  "tdd-guide.agent.md"
   "write-a-commit.agent.md"
 )
 
@@ -47,12 +76,16 @@ SKILLS=(
   "angular-security"
   "angular-tdd"
   "api-design"
+  "architecture-decision-records"
+  "codebase-onboarding"
+  "context-budget"
   "continuous-learning"
   "database-migrations"
   "debugging-playbook"
   "deployment-patterns"
   "docker-patterns"
   "e2e-testing"
+  "flutter-dart-code-review"
   "flutter-patterns"
   "flutter-tdd"
   "frontend-principles"
@@ -72,6 +105,7 @@ SKILLS=(
   "springboot-tdd"
   "springboot-verification"
   "strategic-compact"
+  "tdd-workflow"
   "verification-loop"
 )
 
@@ -81,7 +115,7 @@ LOCAL_MODE=false
 
 if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [ -f "$SCRIPT_DIR/copilot-instructions.md" ] && [ -d "$SCRIPT_DIR/agents" ] && [ -d "$SCRIPT_DIR/skills" ]; then
+  if [ -d "$SCRIPT_DIR/.github/instructions" ] && [ -d "$SCRIPT_DIR/agents" ] && [ -d "$SCRIPT_DIR/skills" ]; then
     LOCAL_MODE=true
   fi
 fi
@@ -135,7 +169,7 @@ deploy_file() {
 }
 
 # ─── 1. Create target structure ───────────────────────────────────────────────
-mkdir -p "$TARGET_DIR/agents" "$TARGET_DIR/skills"
+mkdir -p "$TARGET_DIR/agents" "$TARGET_DIR/skills" "$TARGET_DIR/instructions"
 
 # ─── 2. Discover preserved skills ─────────────────────────────────────────────
 PRESERVED=()
@@ -196,7 +230,20 @@ if [ "$ROOT_UPDATED" -eq 0 ]; then
   info "root files — all up to date"
 fi
 
-# ─── 5. Deploy agents ─────────────────────────────────────────────────────────
+# ─── 5. Deploy modular instructions ──────────────────────────────────────────
+INSTRUCTIONS_UPDATED=0
+for instr in "${INSTRUCTIONS[@]}"; do
+  if deploy_file ".github/instructions/$instr" "$TARGET_DIR/instructions/$instr" "instructions/$instr"; then
+    success "instructions/$instr"
+    ((INSTRUCTIONS_UPDATED++)) || true
+  fi
+done
+
+if [ "$INSTRUCTIONS_UPDATED" -eq 0 ]; then
+  info "instructions/ — all up to date"
+fi
+
+# ─── 5a. Deploy agents ────────────────────────────────────────────────────────
 AGENTS_UPDATED=0
 for agent in "${AGENTS[@]}"; do
   if deploy_file "agents/$agent" "$TARGET_DIR/agents/$agent" "agents/$agent"; then
@@ -235,10 +282,12 @@ echo ""
 
 TOTAL_AGENTS=$(ls "$TARGET_DIR/agents"/*.agent.md 2>/dev/null | wc -l | tr -d ' ')
 TOTAL_SKILLS=$(find "$TARGET_DIR/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+TOTAL_INSTRS=$(ls "$TARGET_DIR/instructions"/*.instructions.md 2>/dev/null | wc -l | tr -d ' ')
 
-echo "  Agents : $TOTAL_AGENTS"
-echo "  Skills : $TOTAL_SKILLS"
-echo "  MCPs   : sequential-thinking, memory"
+echo "  Instructions : $TOTAL_INSTRS (modular, toggleable)"
+echo "  Agents       : $TOTAL_AGENTS"
+echo "  Skills       : $TOTAL_SKILLS"
+echo "  MCPs         : sequential-thinking, memory"
 
 if [ ${#PRESERVED[@]} -gt 0 ]; then
   echo ""
@@ -248,6 +297,14 @@ if [ ${#PRESERVED[@]} -gt 0 ]; then
   done
 fi
 
+echo ""
+echo -e "  ${BLUE}Action required — activate modular instructions globally:${NC}"
+echo "  Add this line to your ~/.bashrc or ~/.zshrc:"
+echo ""
+echo "    export COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions"
+echo ""
+echo "  Then reload your shell: source ~/.bashrc  (or ~/.zshrc)"
+echo "  Toggle individual instruction files via: /instructions"
 echo ""
 echo -e "  ${BLUE}Tip:${NC} Company-specific skills go in:"
 echo "       ~/.copilot/skills/company-{name}-{topic}/SKILL.md"

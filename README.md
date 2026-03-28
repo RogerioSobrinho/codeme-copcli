@@ -1,6 +1,6 @@
 # Everything Copilot CLI
 
-A production-ready foundation for GitHub Copilot CLI: **10 agents** + **30 knowledge skills** + **2 MCP servers** engineered for Java/Spring Boot, Angular, and Flutter development.
+A production-ready foundation for GitHub Copilot CLI: **12 agents** + **36 knowledge skills** + **15 modular instruction files** + **2 MCP servers** engineered for Java/Spring Boot, Angular, and Flutter development.
 
 Clone to `~/.copilot/` once. Every project gets instant context. Every session starts informed.
 
@@ -13,6 +13,13 @@ cd copilot-cli-skills-template && ./install.sh
 curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-template/main/install.sh | bash
 ```
 
+After installing, activate modular instructions globally by adding to your shell config:
+
+```bash
+# ~/.bashrc or ~/.zshrc
+export COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions
+```
+
 ---
 
 ## The 3-Layer Context Model
@@ -22,10 +29,10 @@ Understanding this model is the key to making Copilot CLI your primary dev tool.
 ```
 Layer 0 — Foundation (this repo, public)
 ~/.copilot/
-├── agents/          10 agents for daily workflows
-├── skills/          30 knowledge skills, auto-injected
-├── mcp-config.json  2 local MCP servers (sequential-thinking + memory)
-└── copilot-instructions.md   always-on global rules
+├── agents/          12 agents for daily workflows
+├── skills/          36 knowledge skills, loaded on-demand
+├── instructions/    15 modular instruction files (always-on rules)
+└── mcp-config.json  2 local MCP servers (sequential-thinking + memory)
 
 Layer 1 — Company Knowledge (local only, never in any repo)
 ~/.copilot/skills/
@@ -36,6 +43,8 @@ Layer 1 — Company Knowledge (local only, never in any repo)
 Layer 2 — Project Context (committed to each project repo)
 {project}/.github/copilot-instructions.md
     tech stack, architecture, team conventions, known gotchas
+{project}/.github/instructions/*.instructions.md
+    project-specific modular rules (toggle per-stack via /instructions)
 ```
 
 **Switching companies:** Layer 0 is identical on every machine (re-run `./install.sh`). Layer 1 lives on the machine — Company A skills stay on Company A's machine. Layer 2 stays in each project repo.
@@ -51,6 +60,57 @@ mkdir ~/.copilot/skills/company-a-hexagonal
 ```
 
 See the `skill-authoring` skill for a step-by-step guide: paste any internal text or examples, get back a precision-triggered SKILL.md.
+
+---
+
+## Modular Instructions (15 files)
+
+Instructions are always-on rules loaded automatically. Toggle individual files via `/instructions` in Copilot CLI. Requires `COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot/instructions` in your shell.
+
+### Layer 1 — Language-agnostic (active in every project)
+
+| File | What it enforces |
+|---|---|
+| `core.instructions.md` | Core objective, research-before-coding, stoic communication, YAGNI |
+| `engineering.instructions.md` | Immutability, defensive programming, error handling, API design, deployment readiness |
+| `security.instructions.md` | OWASP mindset, pre-commit checklist, secrets, XSS, CSRF, data scrubbing |
+| `testing.instructions.md` | TDD mandatory (RED→GREEN→REFACTOR), AAA pattern, 80% coverage minimum |
+| `git.instructions.md` | Conventional commits, PR workflow, atomic commits |
+| `performance.instructions.md` | Big O awareness, resource leaks, structured logging, context budget |
+| `multi-option.instructions.md` | 3-option rule — every suggestion must include 3 distinct options + recommendation |
+| `agents.instructions.md` | Available agents table, invocation guide, repo structure |
+
+### Layer 2 — Java / Spring Boot (toggle off in non-Java projects)
+
+| File | What it enforces |
+|---|---|
+| `java.instructions.md` | Naming, modern Java (records, sealed, pattern matching), Optional, Streams |
+| `java-spring.instructions.md` | Constructor DI, @Transactional, controllers→DTOs, JPA lazy loading, API envelope |
+| `java-security.instructions.md` | Bean Validation, @PreAuthorize, PreparedStatement, secrets via env vars |
+| `java-testing.instructions.md` | JUnit5, Mockito, Testcontainers, @WebMvcTest, JaCoCo thresholds |
+
+### Layer 3 — TypeScript / Angular (toggle off in non-Angular projects)
+
+| File | What it enforces |
+|---|---|
+| `typescript.instructions.md` | No `any`, Zod validation, `Readonly<T>`, interfaces vs types, no `console.log` |
+| `angular.instructions.md` | Standalone components, signals, `inject()`, OnPush, functional guards, DomSanitizer |
+
+### Layer 4 — Flutter / Dart (toggle off in non-Flutter projects)
+
+| File | What it enforces |
+|---|---|
+| `flutter.instructions.md` | Clean Architecture, null safety, `final` by default, no `print()`, BLoC/Riverpod, GoRouter |
+
+**Profile examples:**
+
+| Work context | Active files |
+|---|---|
+| Any project | 8 language-agnostic |
+| + Java backend | + 4 `java.*` |
+| + Angular frontend | + `typescript` + `angular` |
+| + Flutter mobile | + `flutter` |
+| Full stack | all 15 |
 
 ---
 
@@ -82,7 +142,7 @@ Use `.github/copilot-instructions.template.md` (in this repo) as a manual starti
 
 ---
 
-## Agents (10)
+## Agents (12)
 
 | Agent | Model | When to use |
 |---|---|---|
@@ -93,6 +153,8 @@ Use `.github/copilot-instructions.template.md` (in this repo) as a manual starti
 | `/fix` | sonnet | Diagnose and fix a build/test/runtime failure |
 | `/refactor` | sonnet | Restructure code while preserving behavior |
 | `/secure` | sonnet | Security audit and dependency CVE scan |
+| `/planner` | sonnet | Requirements → risks → step plan (waits for confirmation before coding) |
+| `/tdd-guide` | sonnet | Enforce RED→GREEN→REFACTOR with coverage verification |
 | `/doc-writer` | haiku | Javadoc, README, ADR, OpenAPI annotations |
 | `/write-a-commit` | haiku | Generate conventional commit from `git diff --staged` |
 | `/init-project` | sonnet | Generate project-level Copilot context file (run once) |
@@ -111,6 +173,10 @@ Use `.github/copilot-instructions.template.md` (in this repo) as a manual starti
 
 **`/secure`** — OWASP dependency check + Spring Security config review + auth/authorization + input validation + secrets scan. Every finding mapped to OWASP Top 10 with severity and concrete fix.
 
+**`/planner`** — Planning-only agent. Gathers requirements, surfaces risks, proposes 3 architectural options, writes a structured step plan. **Writes no code** until user confirms. Equivalent to Claude Code's `/plan` command.
+
+**`/tdd-guide`** — Enforces RED→GREEN→REFACTOR strictly. Writes a failing test first, minimal passing code next, refactors last, verifies coverage. Supports Java (JUnit5+Mockito), Angular (TestBed), and Flutter (bloc_test+WidgetTester).
+
 **`/doc-writer`** — 5 modes triggered by phrase: `javadoc`, `readme`, `adr`, `openapi`, `codemap`. Lightweight — uses haiku model.
 
 **`/write-a-commit`** — Reads `git diff --staged`, generates a conventional commit message + PR description paragraph. Copy-paste ready.
@@ -119,9 +185,9 @@ Use `.github/copilot-instructions.template.md` (in this repo) as a manual starti
 
 ---
 
-## Skills (30)
+## Skills (36)
 
-Skills are reference material, loaded automatically when relevant. You don't invoke them — they appear when needed.
+Skills are reference material loaded on-demand when relevant context is detected. Invoke via `/skills` or they appear automatically when needed.
 
 ### Java / Spring Boot
 
@@ -163,6 +229,7 @@ Skills are reference material, loaded automatically when relevant. You don't inv
 |---|---|
 | `flutter-patterns` | Building BLoC/Cubit, Riverpod, GoRouter, Dio, Either error handling |
 | `flutter-tdd` | Writing bloc_test, WidgetTester, golden tests, integration_test |
+| `flutter-dart-code-review` | Reviewing Flutter/Dart PRs — library-agnostic checklist for state, navigation, performance |
 
 ### Meta / Process
 
@@ -173,6 +240,10 @@ Skills are reference material, loaded automatically when relevant. You don't inv
 | `debugging-playbook` | Reading stack traces, diagnosing Spring exceptions, remote debug, thread dumps |
 | `strategic-compact` | Session running long (>50% context), cycling on the same problem |
 | `continuous-learning` | Documenting a pattern after 3 occurrences, writing ADRs, tracking instincts |
+| `architecture-decision-records` | Capturing an ADR, recording a design decision with context and consequences |
+| `codebase-onboarding` | Mapping an unfamiliar codebase, producing a codemap for a new team member |
+| `context-budget` | Managing token budget in large codebases, avoiding context overflow |
+| `tdd-workflow` | Applying RED→GREEN→REFACTOR in any language/framework |
 | `skill-authoring` | Converting internal docs/text into a SKILL.md |
 
 ### Search / Retrieval / Testing
@@ -242,13 +313,22 @@ curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-
 
 ```
 copilot-cli-skills-template/
-├── agents/                                  10 agent .agent.md files
-├── skills/                                  30 skills, each in skills/{name}/SKILL.md
 ├── .github/
-│   └── copilot-instructions.template.md     Project context starter template
-├── copilot-instructions.md                  Global + Java/Spring Boot rules
-├── mcp-config.json                          MCP servers (sequential-thinking + memory)
-├── install.sh                               Smart deploy (local or remote via curl)
+│   ├── instructions/                    15 modular .instructions.md files
+│   │   ├── core.instructions.md         }
+│   │   ├── engineering.instructions.md  } Layer 1 — language-agnostic (8 files)
+│   │   ├── ...                          }
+│   │   ├── java.instructions.md         }
+│   │   ├── java-spring.instructions.md  } Layer 2 — Java/Spring Boot (4 files)
+│   │   ├── ...                          }
+│   │   ├── typescript.instructions.md   } Layer 3 — Angular/TypeScript (2 files)
+│   │   ├── angular.instructions.md      }
+│   │   └── flutter.instructions.md        Layer 4 — Flutter/Dart (1 file)
+│   └── copilot-instructions.template.md   Project context starter template
+├── agents/                              12 agent .agent.md files
+├── skills/                              36 skills, each in skills/{name}/SKILL.md
+├── mcp-config.json                      MCP servers (sequential-thinking + memory)
+├── install.sh                           Smart deploy (local or remote via curl)
 └── README.md
 ```
 

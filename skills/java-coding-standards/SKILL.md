@@ -315,3 +315,131 @@ new PaymentService(gateway, repository, notifier, new PaymentServiceConfig(3, Du
 | `public static` mutable field | Inject via constructor, use constants |
 | Raw `new` in business logic | Factory or domain method |
 | Checked exception wrapping without re-throw | Preserve root cause with `throw new X("msg", cause)` |
+
+---
+
+## Exceptions
+
+Use unchecked exceptions for domain errors. Wrap technical exceptions with domain context and always preserve the root cause.
+
+```java
+// Domain-specific exception — named after what went wrong in the domain
+public class OrderNotFoundException extends RuntimeException {
+    public OrderNotFoundException(UUID orderId) {
+        super("Order not found: " + orderId);
+    }
+}
+
+// Wrapping a technical exception — preserve root cause
+try {
+    return objectMapper.readValue(json, Order.class);
+} catch (JsonProcessingException ex) {
+    throw new OrderDeserializationException("Failed to parse order payload", ex); // cause preserved
+}
+```
+
+**Rules:**
+- Never use `catch (Exception ex) {}` (silent swallow)
+- Broad `catch (Exception ex)` only at boundary handlers (`@ControllerAdvice`)
+- Use `throw new X("msg", cause)` — never discard the original stack trace
+- Prefer `IllegalArgumentException` / `IllegalStateException` for programming errors
+- Prefer domain exceptions (`OrderNotFoundException`) for business errors
+
+---
+
+## Generics and Type Safety
+
+Avoid raw types. Declare generic parameters to prevent unchecked casts and runtime `ClassCastException`.
+
+```java
+// BAD — raw type; compiler cannot check
+List items = new ArrayList();
+items.add("hello");
+items.add(42);  // no error; ClassCastException later
+
+// GOOD — parameterized
+List<String> names = new ArrayList<>();
+
+// Bounded generics for reusable utilities
+public <T extends Comparable<T>> T max(List<T> items) {
+    return items.stream().max(Comparator.naturalOrder()).orElseThrow();
+}
+
+// Wildcard for read-only consumption
+public void printAll(List<? extends Printable> items) {
+    items.forEach(Printable::print);
+}
+```
+
+**Pitfalls:** Never cast `(List<SomeType>)` a raw list — use proper type tokens. Avoid `@SuppressWarnings("unchecked")` without an inline justification comment.
+
+---
+
+## Project Structure
+
+Standard Maven/Gradle layout for a Spring Boot service:
+
+```
+src/main/java/com/example/app/
+  config/          // @Configuration, @Bean definitions
+  controller/      // @RestController — HTTP boundary only
+  service/         // @Service — use-case orchestration
+  repository/      // Spring Data interfaces
+  domain/          // Entities, value objects, domain exceptions
+  dto/             // Records for request/response (no JPA dependency)
+  util/            // Stateless helpers (use sparingly)
+src/main/resources/
+  application.yml
+src/test/java/...  // Mirrors main; unit tests alongside integration tests
+```
+
+**Member ordering within a class:**
+1. `static final` constants
+2. Non-static final fields (injected dependencies)
+3. Constructor(s)
+4. Public methods
+5. Package-private / protected methods
+6. Private methods
+
+---
+
+## Null Handling
+
+```java
+// ✅ Annotate parameters that may be null
+public void process(@Nullable Filter filter) { ... }
+
+// ✅ Assert non-null at constructor boundary
+public OrderService(@NonNull OrderRepository repository) {
+    this.repository = Objects.requireNonNull(repository, "repository must not be null");
+}
+
+// ✅ Return Optional — never null — from find* methods
+public Optional<Order> findById(UUID id) { ... }
+
+// BAD — returning null forces null-checks on callers
+public Order findById(UUID id) {
+    return null; // caller has no contract to defend against
+}
+```
+
+**Rule:** Prefer `@NonNull` / `@Nullable` (JSR-305 or JSpecify) on all public API boundaries. Use `Objects.requireNonNull()` in constructors for fast-fail detection. Avoid `null` returns from service methods — use `Optional<T>`.
+
+---
+
+## Testing Expectations
+
+```java
+// Test method naming: methodName_givenContext_expectedBehavior
+@Test
+void createOrder_givenValidRequest_returnsCreatedOrder() { ... }
+
+@Test
+void createOrder_givenExpiredItem_throwsItemExpiredException() { ... }
+```
+
+- **JUnit 5 + AssertJ** for fluent, readable assertions (`assertThat(order).isNotNull()`)
+- **Mockito** for mocking — prefer `@ExtendWith(MockitoExtension.class)` over `@SpringBootTest` in unit tests
+- No `Thread.sleep()` — use Awaitility for async assertions
+- Test one behaviour per test method; use `@Nested` to group related cases
+- Favour deterministic data over random values in tests

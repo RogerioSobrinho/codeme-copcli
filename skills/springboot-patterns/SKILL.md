@@ -149,6 +149,16 @@ Redis config: always define TTL, use `GenericJackson2JsonRedisSerializer`, disab
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        String detail = ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> e.getField() + ": " + e.getDefaultMessage())
+            .collect(Collectors.joining(", "));
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        pd.setTitle("Validation Failed");
+        return pd;
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ProblemDetail handleNotFound(EntityNotFoundException ex) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -254,4 +264,105 @@ public void onOrderPlaced(@Payload OrderPlacedEvent event, Acknowledgment ack) {
     }
     // Retryable exceptions: do NOT ack, Kafka will redeliver
 }
+```
+
+---
+
+## 11. Request Logging Filter
+
+```java
+@Component
+public class RequestLoggingFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+        FilterChain filterChain) throws ServletException, IOException {
+        long start = System.currentTimeMillis();
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            long duration = System.currentTimeMillis() - start;
+            log.info("req method={} uri={} status={} durationMs={}",
+                request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
+        }
+    }
+}
+```
+
+---
+
+## 12. Error-Resilient External Calls
+
+For calls to downstream services, use exponential backoff with a bounded retry ceiling. Prefer Resilience4j `@Retry` in Spring apps; use the manual pattern only when the library is unavailable.
+
+```java
+public <T> T withRetry(Supplier<T> supplier, int maxRetries) {
+    int attempts = 0;
+    while (true) {
+        try {
+            return supplier.get();
+        } catch (Exception ex) {
+            attempts++;
+            if (attempts >= maxRetries) throw ex;
+            try {
+                Thread.sleep((long) Math.pow(2, attempts) * 100L); // exponential backoff
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw ex;
+            }
+        }
+    }
+}
+```
+
+**Pitfalls:** Never retry non-idempotent writes without an idempotency key. Always set a max-retry ceiling. Prefer Resilience4j `@Retry` for production — it handles jitter, fallback, and metrics automatically.
+
+---
+
+## 13. Rate Limiting (Bucket4j)
+
+**Security Note:** `X-Forwarded-For` is untrusted by default — clients can spoof it. Only read forwarded headers after configuring `server.forward-headers-strategy=FRAMEWORK` (or `NATIVE`) **and** registering `ForwardedHeaderFilter`. Without this, use `request.getRemoteAddr()` directly.
+
+```java
+@Component
+public class RateLimitFilter extends OncePerRequestFilter {
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+
+    /*
+     * SECURITY: configure server.forward-headers-strategy=FRAMEWORK and register
+     * ForwardedHeaderFilter if this service sits behind a reverse proxy (nginx, ALB, etc.).
+     * Then getRemoteAddr() returns the real client IP from trusted forwarded headers.
+     * Do NOT read X-Forwarded-For directly — it is trivially spoofable.
+     */
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+        FilterChain filterChain) throws ServletException, IOException {
+        String clientIp = request.getRemoteAddr();
+        Bucket bucket = buckets.computeIfAbsent(clientIp, k ->
+            Bucket.builder()
+                .addLimit(Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1))))
+                .build());
+
+        if (bucket.tryConsume(1)) {
+            filterChain.doFilter(request, response);
+        } else {
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.getWriter().write("{\"error\": \"Rate limit exceeded\"}");
+        }
+    }
+}
+```
+
+---
+
+## 14. Production Defaults Checklist
+
+- `spring.mvc.problemdetails.enabled=true` — RFC 7807 ProblemDetail responses (Spring Boot 3+)
+- HikariCP: configure `maximum-pool-size`, `connection-timeout`, `idle-timeout` for workload
+- `@Transactional(readOnly = true)` on all read-only service methods
+- `@Async` methods always return `CompletableFuture<T>` and chain `.exceptionally()`
+- Structured JSON logging via Logback encoder (never plain string concatenation)
+- Metrics: Micrometer + Prometheus/OTel; trace IDs in every MDC context
+- Cache DTOs only — never cache JPA entities (lazy proxies will serialize incorrectly)
 ```
