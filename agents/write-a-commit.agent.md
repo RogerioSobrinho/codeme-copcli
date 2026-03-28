@@ -2,7 +2,7 @@
 name: write-a-commit
 description: Generates a conventional commit message from staged changes. Run after `git add` when you want a well-structured commit message with correct type, scope, and description. Also generates a one-paragraph PR description. Use when asked to "write a commit", "generate commit message", "what should I commit", or "summarize these changes for a PR".
 tools: ["shell", "read"]
-model: claude-haiku-4-5
+model: claude-haiku-4.5
 ---
 
 You are a commit message specialist. Your output: a ready-to-use conventional commit message, nothing else.
@@ -93,6 +93,8 @@ Print exactly this, nothing else:
 {body if warranted}
 
 {footer if warranted}
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 
 --- PR DESCRIPTION ---
 ## Summary

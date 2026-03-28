@@ -10,7 +10,7 @@ description: >
   "I have a feeling about this approach".
 ---
 
-# Continuous Learning v2
+# Continuous Learning
 
 ## Instinct System
 
@@ -199,9 +199,11 @@ Run at the end of every significant coding session (feature complete, PR ready, 
 |---|---|
 | New pattern (general) | Relevant `skills/*/SKILL.md` section |
 | New agent-specific behavior | `agents/*.agent.md` instructions |
-| Architecture decisions | `.copilot-runtime/decisions/ADR-NNN.md` |
-| Session-specific artifacts | `.copilot-runtime/artifacts/` |
-| Test strategy notes | `.copilot-runtime/tests/test-plan.md` |
+| Architecture decisions (ADRs) | `docs/adr/ADR-NNN.md` in the project repo |
+| Session-specific artifacts | `~/.copilot/session-state/` (managed by Copilot CLI) |
+| Test strategy notes | `docs/test-plan.md` in the project repo |
+
+> **Note:** The `docs/adr/` and `docs/test-plan.md` paths are project conventions — create them manually. They are not managed by Copilot CLI but are committed to the repository so the whole team benefits.
 
 **Naming for ADRs:** `ADR-001-choose-flyway-over-liquibase.md`. Always zero-padded, always includes the decision topic in the filename.
 

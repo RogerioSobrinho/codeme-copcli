@@ -37,6 +37,11 @@ When exploring a codebase: grep, glob, and view multiple files simultaneously �
 
 ## Performance
 
+- Prefer profiling before optimizing — measure with JFR, async-profiler, or `jstack` before assuming the bottleneck.
+- Cache reads, not writes. Invalidation is harder than it looks — prefer short TTLs over complex eviction logic.
+- Use connection pool metrics (`HikariCP`, `pool.size`, `pool.pending`) to detect saturation before it becomes an outage.
+- For Spring Boot: `spring-boot-actuator` + Micrometer exposes JVM metrics (heap, GC, threads) at `/actuator/metrics`.
+
 ## Structured Logging
 
 - Use JSON or Key-Value pair format — no string concatenation.

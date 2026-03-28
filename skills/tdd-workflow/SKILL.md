@@ -1,409 +1,258 @@
 ---
 name: tdd-workflow
-description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and E2E tests.
+description: >
+  Load when writing a new feature, fixing a bug, or refactoring code in any stack.
+  Enforces the RED → GREEN → REFACTOR cycle with 80%+ coverage. Use when asked
+  "how do I write this with TDD", "write tests first", "what tests should I write for this",
+  "help me apply TDD to this feature". Covers Java (JUnit5/AssertJ/Mockito),
+  TypeScript (Jest/Vitest/Playwright), and Flutter (flutter_test/bloc_test).
 ---
 
 # Test-Driven Development Workflow
 
-This skill ensures all code development follows TDD principles with comprehensive test coverage.
+Enforce: **write the failing test first**, then implement the minimum code to make it pass, then refactor.
 
-## When to Activate
-
-- Writing new features or functionality
-- Fixing bugs or issues
-- Refactoring existing code
-- Adding API endpoints
-- Creating new components
-
-## Core Principles
-
-### 1. Tests BEFORE Code
-ALWAYS write tests first, then implement code to make tests pass.
-
-### 2. Coverage Requirements
-- Minimum 80% coverage (unit + integration + E2E)
-- All edge cases covered
-- Error scenarios tested
-- Boundary conditions verified
-
-### 3. Test Types
-
-#### Unit Tests
-- Individual functions and utilities
-- Component logic
-- Pure functions
-- Helpers and utilities
-
-#### Integration Tests
-- API endpoints
-- Database operations
-- Service interactions
-- External API calls
-
-#### E2E Tests (Playwright)
-- Critical user flows
-- Complete workflows
-- Browser automation
-- UI interactions
-
-## TDD Workflow Steps
-
-### Step 1: Write User Journeys
-```
-As a [role], I want to [action], so that [benefit]
-
-Example:
-As a user, I want to search for markets semantically,
-so that I can find relevant markets even without exact keywords.
-```
-
-### Step 2: Generate Test Cases
-For each user journey, create comprehensive test cases:
-
-```typescript
-describe('Semantic Search', () => {
-  it('returns relevant markets for query', async () => {
-    // Test implementation
-  })
-
-  it('handles empty query gracefully', async () => {
-    // Test edge case
-  })
-
-  it('falls back to substring search when Redis unavailable', async () => {
-    // Test fallback behavior
-  })
-
-  it('sorts results by similarity score', async () => {
-    // Test sorting logic
-  })
-})
-```
-
-### Step 3: Run Tests (They Should Fail)
-```bash
-npm test
-# Tests should fail - we haven't implemented yet
-```
-
-### Step 4: Implement Code
-Write minimal code to make tests pass:
-
-```typescript
-// Implementation guided by tests
-export async function searchMarkets(query: string) {
-  // Implementation here
-}
-```
-
-### Step 5: Run Tests Again
-```bash
-npm test
-# Tests should now pass
-```
-
-### Step 6: Refactor
-Improve code quality while keeping tests green:
-- Remove duplication
-- Improve naming
-- Optimize performance
-- Enhance readability
-
-### Step 7: Verify Coverage
-```bash
-npm run test:coverage
-# Verify 80%+ coverage achieved
-```
-
-## Testing Patterns
-
-### Unit Test Pattern (Jest/Vitest)
-```typescript
-import { render, screen, fireEvent } from '@testing-library/react'
-import { Button } from './Button'
-
-describe('Button Component', () => {
-  it('renders with correct text', () => {
-    render(<Button>Click me</Button>)
-    expect(screen.getByText('Click me')).toBeInTheDocument()
-  })
-
-  it('calls onClick when clicked', () => {
-    const handleClick = jest.fn()
-    render(<Button onClick={handleClick}>Click</Button>)
-
-    fireEvent.click(screen.getByRole('button'))
-
-    expect(handleClick).toHaveBeenCalledTimes(1)
-  })
-
-  it('is disabled when disabled prop is true', () => {
-    render(<Button disabled>Click</Button>)
-    expect(screen.getByRole('button')).toBeDisabled()
-  })
-})
-```
-
-### API Integration Test Pattern
-```typescript
-import { NextRequest } from 'next/server'
-import { GET } from './route'
-
-describe('GET /api/markets', () => {
-  it('returns markets successfully', async () => {
-    const request = new NextRequest('http://localhost/api/markets')
-    const response = await GET(request)
-    const data = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(data.success).toBe(true)
-    expect(Array.isArray(data.data)).toBe(true)
-  })
-
-  it('validates query parameters', async () => {
-    const request = new NextRequest('http://localhost/api/markets?limit=invalid')
-    const response = await GET(request)
-
-    expect(response.status).toBe(400)
-  })
-
-  it('handles database errors gracefully', async () => {
-    // Mock database failure
-    const request = new NextRequest('http://localhost/api/markets')
-    // Test error handling
-  })
-})
-```
-
-### E2E Test Pattern (Playwright)
-```typescript
-import { test, expect } from '@playwright/test'
-
-test('user can search and filter markets', async ({ page }) => {
-  // Navigate to markets page
-  await page.goto('/')
-  await page.click('a[href="/markets"]')
-
-  // Verify page loaded
-  await expect(page.locator('h1')).toContainText('Markets')
-
-  // Search for markets
-  await page.fill('input[placeholder="Search markets"]', 'election')
-
-  // Wait for debounce and results
-  await page.waitForTimeout(600)
-
-  // Verify search results displayed
-  const results = page.locator('[data-testid="market-card"]')
-  await expect(results).toHaveCount(5, { timeout: 5000 })
-
-  // Verify results contain search term
-  const firstResult = results.first()
-  await expect(firstResult).toContainText('election', { ignoreCase: true })
-
-  // Filter by status
-  await page.click('button:has-text("Active")')
-
-  // Verify filtered results
-  await expect(results).toHaveCount(3)
-})
-
-test('user can create a new market', async ({ page }) => {
-  // Login first
-  await page.goto('/creator-dashboard')
-
-  // Fill market creation form
-  await page.fill('input[name="name"]', 'Test Market')
-  await page.fill('textarea[name="description"]', 'Test description')
-  await page.fill('input[name="endDate"]', '2025-12-31')
-
-  // Submit form
-  await page.click('button[type="submit"]')
-
-  // Verify success message
-  await expect(page.locator('text=Market created successfully')).toBeVisible()
-
-  // Verify redirect to market page
-  await expect(page).toHaveURL(/\/markets\/test-market/)
-})
-```
-
-## Test File Organization
+## The Cycle
 
 ```
-src/
-├── components/
-│   ├── Button/
-│   │   ├── Button.tsx
-│   │   ├── Button.test.tsx          # Unit tests
-│   │   └── Button.stories.tsx       # Storybook
-│   └── MarketCard/
-│       ├── MarketCard.tsx
-│       └── MarketCard.test.tsx
-├── app/
-│   └── api/
-│       └── markets/
-│           ├── route.ts
-│           └── route.test.ts         # Integration tests
-└── e2e/
-    ├── markets.spec.ts               # E2E tests
-    ├── trading.spec.ts
-    └── auth.spec.ts
+RED   → Write a failing test. Run it. Confirm it fails for the right reason.
+GREEN → Write the minimum code to make it pass. No more.
+REFACTOR → Clean up while tests stay green.
+REPEAT
 ```
 
-## Mocking External Services
-
-### Supabase Mock
-```typescript
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve({
-          data: [{ id: 1, name: 'Test Market' }],
-          error: null
-        }))
-      }))
-    }))
-  }
-}))
-```
-
-### Redis Mock
-```typescript
-jest.mock('@/lib/redis', () => ({
-  searchMarketsByVector: jest.fn(() => Promise.resolve([
-    { slug: 'test-market', similarity_score: 0.95 }
-  ])),
-  checkRedisHealth: jest.fn(() => Promise.resolve({ connected: true }))
-}))
-```
-
-### OpenAI Mock
-```typescript
-jest.mock('@/lib/openai', () => ({
-  generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(1536).fill(0.1) // Mock 1536-dim embedding
-  ))
-}))
-```
-
-## Test Coverage Verification
-
-### Run Coverage Report
-```bash
-npm run test:coverage
-```
-
-### Coverage Thresholds
-```json
-{
-  "jest": {
-    "coverageThresholds": {
-      "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
-  }
-}
-```
-
-## Common Testing Mistakes to Avoid
-
-### ❌ WRONG: Testing Implementation Details
-```typescript
-// Don't test internal state
-expect(component.state.count).toBe(5)
-```
-
-### ✅ CORRECT: Test User-Visible Behavior
-```typescript
-// Test what users see
-expect(screen.getByText('Count: 5')).toBeInTheDocument()
-```
-
-### ❌ WRONG: Brittle Selectors
-```typescript
-// Breaks easily
-await page.click('.css-class-xyz')
-```
-
-### ✅ CORRECT: Semantic Selectors
-```typescript
-// Resilient to changes
-await page.click('button:has-text("Submit")')
-await page.click('[data-testid="submit-button"]')
-```
-
-### ❌ WRONG: No Test Isolation
-```typescript
-// Tests depend on each other
-test('creates user', () => { /* ... */ })
-test('updates same user', () => { /* depends on previous test */ })
-```
-
-### ✅ CORRECT: Independent Tests
-```typescript
-// Each test sets up its own data
-test('creates user', () => {
-  const user = createTestUser()
-  // Test logic
-})
-
-test('updates user', () => {
-  const user = createTestUser()
-  // Update logic
-})
-```
-
-## Continuous Testing
-
-### Watch Mode During Development
-```bash
-npm test -- --watch
-# Tests run automatically on file changes
-```
-
-### Pre-Commit Hook
-```bash
-# Runs before every commit
-npm test && npm run lint
-```
-
-### CI/CD Integration
-```yaml
-# GitHub Actions
-- name: Run Tests
-  run: npm test -- --coverage
-- name: Upload Coverage
-  uses: codecov/codecov-action@v3
-```
-
-## Best Practices
-
-1. **Write Tests First** - Always TDD
-2. **One Assert Per Test** - Focus on single behavior
-3. **Descriptive Test Names** - Explain what's tested
-4. **Arrange-Act-Assert** - Clear test structure
-5. **Mock External Dependencies** - Isolate unit tests
-6. **Test Edge Cases** - Null, undefined, empty, large
-7. **Test Error Paths** - Not just happy paths
-8. **Keep Tests Fast** - Unit tests < 50ms each
-9. **Clean Up After Tests** - No side effects
-10. **Review Coverage Reports** - Identify gaps
-
-## Success Metrics
-
-- 80%+ code coverage achieved
-- All tests passing (green)
-- No skipped or disabled tests
-- Fast test execution (< 30s for unit tests)
-- E2E tests cover critical user flows
-- Tests catch bugs before production
+**Never skip RED.** A test that was never failing gives zero confidence.
 
 ---
 
-**Remember**: Tests are not optional. They are the safety net that enables confident refactoring, rapid development, and production reliability.
+## Coverage Requirements
+
+| Test type | Minimum | 100% required for |
+|---|---|---|
+| Unit | 80% | Auth, payments, security-critical code |
+| Integration | Key flows | DB operations, API endpoints |
+| E2E | Critical paths | Login, checkout, core user journeys |
+
+---
+
+## Java (JUnit 5 + AssertJ + Mockito)
+
+### Unit test
+
+```java
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock private OrderRepository orderRepository;
+    private OrderService sut;
+
+    @BeforeEach void setUp() { sut = new OrderService(orderRepository); }
+
+    @Test
+    @DisplayName("createOrder saves and returns the new order")
+    void createOrder_validRequest_returnsSavedOrder() {
+        // Arrange
+        var request = new CreateOrderRequest("cust-1", List.of(new OrderItem("prod-1", 2)));
+        var saved = new Order(UUID.randomUUID(), "cust-1", OrderStatus.PENDING);
+        when(orderRepository.save(any())).thenReturn(saved);
+
+        // Act
+        var result = sut.createOrder(request);
+
+        // Assert
+        assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("createOrder throws when customer ID is blank")
+    void createOrder_blankCustomerId_throwsIllegalArgument() {
+        var request = new CreateOrderRequest("", List.of());
+        assertThatThrownBy(() -> sut.createOrder(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("customerId");
+    }
+}
+```
+
+### Repository / integration test (Testcontainers)
+
+```java
+@DataJpaTest
+@Testcontainers
+class OrderRepositoryIT {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+        .withReuse(true);
+
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry r) {
+        r.add("spring.datasource.url", postgres::getJdbcUrl);
+        r.add("spring.datasource.username", postgres::getUsername);
+        r.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    @Autowired OrderRepository sut;
+
+    @Test
+    void save_thenFindById_returnsPersistedOrder() {
+        var order = new Order(null, "cust-1", OrderStatus.PENDING);
+        var saved = sut.save(order);
+        var found = sut.findById(saved.id());
+        assertThat(found).isPresent().get()
+            .extracting(Order::customerId).isEqualTo("cust-1");
+    }
+}
+```
+
+### Run + coverage
+
+```bash
+./mvnw test                          # unit tests
+./mvnw verify                        # all tests including integration
+./mvnw verify jacoco:report          # coverage report → target/site/jacoco/index.html
+```
+
+---
+
+## TypeScript (Jest / Vitest)
+
+### Unit test
+
+```typescript
+// orders.service.test.ts
+import { OrderService } from './orders.service';
+import { OrderRepository } from './orders.repository';
+
+jest.mock('./orders.repository');
+
+describe('OrderService', () => {
+  let sut: OrderService;
+  let repo: jest.Mocked<OrderRepository>;
+
+  beforeEach(() => {
+    repo = new OrderRepository() as jest.Mocked<OrderRepository>;
+    sut = new OrderService(repo);
+  });
+
+  it('createOrder returns the saved order', async () => {
+    // Arrange
+    const saved = { id: 'ord-1', customerId: 'cust-1', status: 'PENDING' };
+    repo.save.mockResolvedValue(saved);
+
+    // Act
+    const result = await sut.createOrder({ customerId: 'cust-1', items: [] });
+
+    // Assert
+    expect(result.status).toBe('PENDING');
+    expect(repo.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('createOrder rejects blank customerId', async () => {
+    await expect(sut.createOrder({ customerId: '', items: [] }))
+      .rejects.toThrow('customerId');
+  });
+});
+```
+
+### API integration test (supertest / httpx)
+
+```typescript
+import request from 'supertest';
+import { app } from '../app';
+
+describe('POST /orders', () => {
+  it('returns 201 with the created order', async () => {
+    const res = await request(app)
+      .post('/orders')
+      .send({ customerId: 'cust-1', items: [{ productId: 'prod-1', qty: 2 }] });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.status).toBe('PENDING');
+  });
+
+  it('returns 400 when customerId is missing', async () => {
+    const res = await request(app).post('/orders').send({ items: [] });
+    expect(res.status).toBe(400);
+  });
+});
+```
+
+### Run + coverage
+
+```bash
+npx jest --coverage
+# or with Vitest:
+npx vitest run --coverage
+```
+
+---
+
+## Flutter (flutter_test + bloc_test)
+
+### Widget test
+
+```dart
+testWidgets('OrderListPage shows empty state when orders list is empty', (tester) async {
+  // Arrange
+  when(mockBloc.state).thenReturn(const OrderState.loaded([]));
+
+  // Act
+  await tester.pumpWidget(
+    BlocProvider<OrderBloc>.value(
+      value: mockBloc,
+      child: const MaterialApp(home: OrderListPage()),
+    ),
+  );
+
+  // Assert
+  expect(find.text('No orders yet'), findsOneWidget);
+  expect(find.byType(OrderCard), findsNothing);
+});
+```
+
+### BLoC test
+
+```dart
+blocTest<OrderBloc, OrderState>(
+  'emits [loading, loaded] when LoadOrders succeeds',
+  build: () {
+    when(mockRepo.getOrders()).thenAnswer((_) async => [fakeOrder]);
+    return OrderBloc(repository: mockRepo);
+  },
+  act: (bloc) => bloc.add(const LoadOrders()),
+  expect: () => [
+    const OrderState.loading(),
+    OrderState.loaded([fakeOrder]),
+  ],
+);
+```
+
+### Run + coverage
+
+```bash
+flutter test                              # all tests
+flutter test --coverage                   # coverage → coverage/lcov.info
+genhtml coverage/lcov.info -o coverage/html && open coverage/html/index.html
+```
+
+---
+
+## Test Naming Convention
+
+| Stack | Pattern | Example |
+|---|---|---|
+| Java | `method_context_expectation` | `createOrder_blankCustomerId_throwsIllegalArgument` |
+| TypeScript | `describe + it` | `describe('OrderService') it('rejects blank customerId')` |
+| Flutter | `'description of expected behavior'` | `'shows empty state when list is empty'` |
+
+---
+
+## Anti-Patterns
+
+❌ Writing implementation before tests — removes the verification that the test can fail.
+❌ Testing implementation details (private methods, internal state) — test behavior, not structure.
+❌ One massive test for multiple behaviors — one test, one behavior.
+❌ `Thread.sleep()` in async tests — use Awaitility (Java), `fakeAsync`/`pump` (Flutter), `jest.useFakeTimers()` (TS).
+❌ Skipping the refactor step — green is not done; clean code is done.

@@ -2,7 +2,7 @@
 name: init-project
 description: Generates a project-level .github/copilot-instructions.md by reading the codebase structure, pom.xml/build.gradle, existing architecture, and team conventions. Run once when starting work on a new or unfamiliar project, or when asked to "set up Copilot context for this project", "generate project instructions", or "help Copilot understand this codebase".
 tools: ["read", "write", "search", "shell"]
-model: claude-sonnet-4-5
+model: claude-sonnet-4.5
 ---
 
 You are a project context analyst. Your job: read a codebase and produce a `.github/copilot-instructions.md` that makes every future Copilot CLI session immediately context-aware — no more starting blind.
@@ -111,15 +111,18 @@ com.{company}.{project}/
 - **Test naming**: {e.g., "methodName_givenContext_expectedBehavior"}
 
 ## Agents Available
-Run these in Copilot CLI for specialized tasks:
-- `/new-feature` — plan and implement a new feature end-to-end
-- `/fix` — diagnose and fix a bug systematically
-- `/code-review` — Java-specific tiered review (CRITICAL/HIGH/MEDIUM)
-- `/refactor` — clean up code while preserving behavior
-- `/secure` — security audit and hardening
-- `/doc-writer` — Javadoc, README, ADR, OpenAPI annotations
-- `/write-a-commit` — generate conventional commit from staged changes
-- `/explore` — understand unfamiliar code or trace a behavior
+Run these via `/agent` in Copilot CLI, or mention the agent name in your prompt:
+- `new-feature` — plan and implement a new feature end-to-end
+- `new-project` — bootstrap a new Spring Boot project from scratch
+- `planner` — produce a structured plan before any code is written
+- `tdd-guide` — enforce RED → GREEN → REFACTOR, write tests first
+- `fix` — diagnose and fix a bug systematically
+- `code-review` — Java-specific tiered review (CRITICAL/HIGH/MEDIUM)
+- `refactor` — clean up code while preserving behavior
+- `secure` — security audit and hardening
+- `doc-writer` — Javadoc, README, ADR, OpenAPI annotations
+- `write-a-commit` — generate conventional commit from staged changes
+- `explore` — understand unfamiliar code or trace a behavior
 
 ## Project-Specific Notes
 {Any domain context, known quirks, or constraints not captured above}

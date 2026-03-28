@@ -11,60 +11,8 @@ description: >
 
 # Git Workflow
 
-## Conventional Commits
-
-### Format
-
-```
-{type}({scope}): {subject}
-
-{body}
-
-{footer}
-```
-
-### Types
-
-| Type | Use when |
-|---|---|
-| `feat` | New feature or capability |
-| `fix` | Bug fix |
-| `refactor` | Code change with no behavior impact |
-| `perf` | Measurable performance improvement |
-| `test` | Test changes only |
-| `docs` | Documentation only |
-| `chore` | Build, dependencies, CI config |
-| `style` | Formatting only (no logic) |
-| `revert` | Reverting a prior commit |
-| `ci` | CI/CD pipeline changes |
-
-### Subject Rules
-
-- Imperative mood: `add`, `fix`, `remove` — not `added`, `fixes`
-- No period at the end
-- Max 72 characters
-- Lowercase
-
-### Body
-
-```
-fix(orders): prevent duplicate order creation on retry
-
-OrderService.createOrder() was not idempotent — calling it twice
-with the same idempotency key created two DB records. Added a
-uniqueness check on idempotency_key before insert.
-
-Closes #142
-```
-
-### Breaking Changes
-
-```
-feat(api)!: change order response to include nested customer object
-
-BREAKING CHANGE: GET /orders now returns { order: {...}, customer: {...} }
-instead of a flat object. Consumers must update their deserialization.
-```
+> The conventional commit format and PR workflow rules are always active via `git.instructions.md`.
+> This skill provides the **advanced operations** reference: rebase, bisect, stash, conflict resolution.
 
 ---
 
