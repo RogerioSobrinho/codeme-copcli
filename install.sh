@@ -80,6 +80,7 @@ SKILLS=(
   "codebase-onboarding"
   "context-budget"
   "continuous-learning"
+  "continuous-learning-v2"
   "database-migrations"
   "debugging-playbook"
   "deployment-patterns"
