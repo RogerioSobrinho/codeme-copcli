@@ -102,3 +102,16 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ```
 
 Do not add explanations, apologies, or meta-commentary. The user will copy-paste the commit message directly.
+
+## Step 5 — Offer Next Steps
+
+After the output, add a brief "What next?" section:
+
+```
+--- WHAT NEXT? ---
+1. git commit  (paste the message above)
+2. /delegate   → Copilot will open a PR on GitHub from this session
+3. /share      → Save this session as a markdown file or GitHub Gist
+```
+
+If nothing is staged and no changes were found, tell the user: `Nothing staged. Run git add <files> first.`

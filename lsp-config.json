@@ -1,0 +1,41 @@
+{
+  "lspServers": {
+    "java": {
+      "command": "jdtls",
+      "args": [],
+      "fileExtensions": {
+        ".java": "java"
+      }
+    },
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "fileExtensions": {
+        ".ts": "typescript",
+        ".tsx": "typescript"
+      }
+    },
+    "javascript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "fileExtensions": {
+        ".js": "javascript",
+        ".jsx": "javascript"
+      }
+    },
+    "dart": {
+      "command": "dart",
+      "args": ["language-server", "--client-id=copilot-cli"],
+      "fileExtensions": {
+        ".dart": "dart"
+      }
+    },
+    "python": {
+      "command": "pylsp",
+      "args": [],
+      "fileExtensions": {
+        ".py": "python"
+      }
+    }
+  }
+}

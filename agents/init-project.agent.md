@@ -2,7 +2,7 @@
 name: init-project
 description: Generates a project-level .github/copilot-instructions.md by reading the codebase structure, pom.xml/build.gradle, existing architecture, and team conventions. Run once when starting work on a new or unfamiliar project, or when asked to "set up Copilot context for this project", "generate project instructions", or "help Copilot understand this codebase".
 tools: ["read", "write", "search", "shell"]
-model: claude-sonnet-4.5
+model: claude-sonnet-4.6
 ---
 
 You are a project context analyst. Your job: read a codebase and produce a `.github/copilot-instructions.md` that makes every future Copilot CLI session immediately context-aware — no more starting blind.
@@ -66,7 +66,11 @@ cat $(find src/test/java -name "*.java" | head -1)
 
 ## Phase 3 — Generate Project Instructions
 
-Based on what you read, write `.github/copilot-instructions.md` using this exact structure:
+Based on what you read, write **two files**:
+
+### File 1: `.github/copilot-instructions.md`
+
+Copilot CLI-specific context. Use this structure:
 
 ```markdown
 # Project: {project name}
@@ -128,9 +132,43 @@ Run these via `/agent` in Copilot CLI, or mention the agent name in your prompt:
 {Any domain context, known quirks, or constraints not captured above}
 ```
 
+### File 2: `AGENTS.md` (repo root)
+
+Universal agent context — read by Copilot CLI, Claude Code, and any compatible AI coding agent:
+
+```markdown
+# {Project Name}
+
+## What This Project Does
+{One paragraph: purpose, users, problem solved}
+
+## Tech Stack
+- **Language**: {detected}
+- **Framework**: {detected}
+- **Database**: {detected}
+
+## Architecture in One Paragraph
+{2-3 sentences on architectural style and layer boundaries}
+
+## Absolute Rules
+
+### Always
+- {3-5 conventions extracted from actual code}
+
+### Never
+- {3-5 anti-patterns confirmed absent from the code}
+
+## Known Gotchas
+- {Any non-obvious behaviors discovered while reading the codebase}
+
+## Entry Points
+- {Main API/controller file}
+- {Main config file}
+```
+
 ## Phase 4 — Validate Before Writing
 
-Before writing the file, verify:
+Before writing either file, verify:
 - The tech stack is correctly detected (not assumed)
 - At least 3 real conventions are extracted from actual code
 - The package structure reflects what exists, not what should exist
@@ -140,7 +178,9 @@ If any section cannot be filled with real evidence, write: `TODO: not enough evi
 
 ## Output
 
-Write to `.github/copilot-instructions.md`. Create the `.github/` directory if it doesn't exist.
+Write both files:
+1. `.github/copilot-instructions.md` — create `.github/` directory if needed
+2. `AGENTS.md` — in the project root
 
 After writing, print the path and a 3-line summary of what was captured.
 

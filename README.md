@@ -1,6 +1,6 @@
 # Everything Copilot CLI
 
-A production-ready foundation for GitHub Copilot CLI: **12 agents** + **36 knowledge skills** + **15 modular instruction files** + **2 MCP servers** engineered for Java/Spring Boot, Angular, and Flutter development.
+A production-ready foundation for GitHub Copilot CLI: **17 agents** + **43 knowledge skills** + **16 modular instruction files** + **2 MCP servers** + **LSP config** engineered for Java/Spring Boot, Angular, Flutter, Python, React, Node.js, and Go development.
 
 Clone to `~/.copilot/` once. Every project gets instant context. Every session starts informed.
 
@@ -29,10 +29,14 @@ Understanding this model is the key to making Copilot CLI your primary dev tool.
 ```
 Layer 0 — Foundation (this repo, public)
 ~/.copilot/
-├── agents/          12 agents for daily workflows
-├── skills/          36 knowledge skills, loaded on-demand
-├── instructions/    15 modular instruction files (always-on rules)
-└── mcp-config.json  2 local MCP servers (sequential-thinking + memory)
+├── agents/          17 agents for daily workflows
+├── skills/          43 knowledge skills, loaded on-demand
+├── instructions/    16 modular instruction files (always-on rules)
+├── mcp-config.json  2 local MCP servers (sequential-thinking + memory)
+└── lsp-config.json  LSP server config (code intelligence per stack)
+
+Note: The GitHub MCP server is BUILT-IN to Copilot CLI — always active, no config needed.
+      The 2 MCP servers above ADD TO the built-in GitHub MCP.
 
 Layer 1 — Company Knowledge (local only, never in any repo)
 ~/.copilot/skills/
@@ -41,10 +45,15 @@ Layer 1 — Company Knowledge (local only, never in any repo)
 └── company-a-jvm-standards/SKILL.md    JVM/header standards
 
 Layer 2 — Project Context (committed to each project repo)
+{project}/AGENTS.md
+    universal agent context — read by Copilot CLI, Claude Code, and any compatible agent
 {project}/.github/copilot-instructions.md
-    tech stack, architecture, team conventions, known gotchas
+    tech stack, architecture, team conventions, known gotchas (Copilot CLI-specific)
 {project}/.github/instructions/*.instructions.md
     project-specific modular rules (toggle per-stack via /instructions)
+{project}/.github/agents/*.agent.md
+    project-specific agents — override user-level agents when names conflict
+    version-controlled alongside the code, shared across the team
 ```
 
 **Switching companies:** Layer 0 is identical on every machine (re-run `./install.sh`). Layer 1 lives on the machine — Company A skills stay on Company A's machine. Layer 2 stays in each project repo.
@@ -113,6 +122,12 @@ The `.github/instructions/` directory in this repo is the **source** used by `in
 |---|---|
 | `flutter.instructions.md` | Clean Architecture, null safety, `final` by default, no `print()`, BLoC/Riverpod, GoRouter |
 
+### Layer 5 — Python (toggle off in non-Python projects)
+
+| File | What it enforces |
+|---|---|
+| `python.instructions.md` | Type hints mandatory, Pydantic v2, no bare `except`, structured logging, `Decimal` for money |
+
 **Profile examples:**
 
 | Work context | Active files |
@@ -121,13 +136,14 @@ The `.github/instructions/` directory in this repo is the **source** used by `in
 | + Java backend | + 4 `java.*` |
 | + Angular frontend | + `typescript` + `angular` |
 | + Flutter mobile | + `flutter` |
-| Full stack | all 15 |
+| + Python backend | + `python` |
+| Full stack | all 16 |
 
 ---
 
 ## init-project Workflow
 
-Run once per project. Generates `.github/copilot-instructions.md` so every future session starts with full context.
+Run once per project. Generates `.github/copilot-instructions.md` **and** `AGENTS.md` so every future session starts with full context.
 
 ```
 1. Install foundation once
@@ -139,46 +155,64 @@ Run once per project. Generates `.github/copilot-instructions.md` so every futur
 
 3. For each project
    cd your-project/
-   /init-project        → reads codebase, generates .github/copilot-instructions.md
-   # Enrich the file manually:
+   /init-project        → reads codebase, generates:
+                           - .github/copilot-instructions.md  (Copilot CLI-specific)
+                           - AGENTS.md                        (universal agent context)
+   # Enrich both files manually:
    #   - add company-specific conventions
    #   - reference your local company skills
    #   - document known gotchas
-   git add .github/copilot-instructions.md && git commit
+   git add .github/copilot-instructions.md AGENTS.md && git commit
 
 4. Every future session in that directory: fully context-aware
+   (AGENTS.md is also read by Claude Code, GitHub Copilot, and other AI agents)
 ```
 
 Use `.github/copilot-instructions.template.md` (in this repo) as a manual starting point if you prefer to fill it in without running `init-project`.
 
 ---
 
-## Agents (12)
+## Agents (17)
 
 | Agent | Model | When to use |
 |---|---|---|
 | `/new-feature` | opus | Build a new feature end-to-end |
 | `/new-project` | opus | Bootstrap a new Spring Boot service |
+| `/architect` | sonnet | System design, 3-option trade-off analysis, ADR generation |
 | `/explore` | sonnet | Understand unfamiliar code or trace a behavior |
-| `/code-review` | sonnet | Review staged changes or a PR diff |
+| `/code-review` | sonnet | Review staged Java/Spring Boot changes or a PR diff |
+| `/typescript-reviewer` | sonnet | Review TypeScript/React changes for type safety and hook patterns |
+| `/python-reviewer` | sonnet | Review Python changes for async safety, type hints, and security |
+| `/pr-review` | sonnet | Review an existing GitHub PR via GitHub MCP |
 | `/fix` | sonnet | Diagnose and fix a build/test/runtime failure |
+| `/build-resolver` | sonnet | Fix build/compile errors across any stack (Java, TS, Go, Python, Flutter) |
 | `/refactor` | sonnet | Restructure code while preserving behavior |
-| `/secure` | sonnet | Security audit and dependency CVE scan |
+| `/secure` | opus | Security audit and dependency CVE scan |
 | `/planner` | sonnet | Requirements → risks → step plan (waits for confirmation before coding) |
 | `/tdd-guide` | sonnet | Enforce RED→GREEN→REFACTOR with coverage verification |
 | `/doc-writer` | haiku | Javadoc, README, ADR, OpenAPI annotations |
 | `/write-a-commit` | haiku | Generate conventional commit from `git diff --staged` |
-| `/init-project` | sonnet | Generate project-level Copilot context file (run once) |
+| `/init-project` | sonnet | Generate project-level Copilot context files (run once) |
 
 **`/new-feature`** — Explores the codebase, asks requirements questions, proposes 3 architectural options (one RECOMMENDED), implements via TDD (tests first), reviews its own output for bugs and security. Never skips steps.
 
 **`/new-project`** — Proposes 3 architectural approaches (layered / modular monolith / microservices), generates complete scaffold: pom.xml, packages, application.yml, Dockerfile, docker-compose.yml, GitHub Actions CI.
 
+**`/architect`** — Reads existing architecture, presents 3 distinct design options with pros/cons, marks one RECOMMENDED, and generates an Architecture Decision Record (ADR) once confirmed. Use for new services, major design choices, or cross-cutting concerns.
+
 **`/explore`** — Runs `find`, `grep`, `git log` first, then answers. Produces codemaps: layers, bounded contexts, entry points, main flows. Scan first, answer second — never asks for context it can discover itself.
 
-**`/code-review`** — CRITICAL / HIGH / MEDIUM tiered review. Reports only: bugs, security vulnerabilities, logic errors, architecture violations. Never style comments. Ends with APPROVED / CHANGES REQUESTED / BLOCKED.
+**`/code-review`** — CRITICAL / HIGH / MEDIUM tiered review for Java/Spring Boot. Reports only: bugs, security vulnerabilities, logic errors, architecture violations. Never style comments. Ends with APPROVED / CHANGES REQUESTED / BLOCKED.
 
-**`/fix`** — Runs the build immediately. Classifies the failure type, applies a surgical fix, re-runs to verify. Max 3 attempts with different approaches.
+**`/typescript-reviewer`** — Specialized review for TypeScript and React. Catches `any` leaks, unsound assertions, hook rule violations, missing `await`, and unsafe `dangerouslySetInnerHTML`. Same tiered format as `/code-review`.
+
+**`/python-reviewer`** — Specialized review for Python. Catches blocking I/O in async context, missing type hints, SQL injection via f-strings, broad `except`, and Pydantic `Any` fields. Same tiered format as `/code-review`.
+
+**`/pr-review`** — Uses the GitHub MCP server to read an existing PR diff, files, and comments. Produces the same tiered review format as `/code-review` but for any PR number in the repo. Useful for async review and CI gate checks.
+
+**`/fix`** — Runs the build immediately. Classifies the failure type (compilation, dependency conflict, test failure, runtime), applies a surgical fix, re-runs to verify. Max 3 attempts with different approaches.
+
+**`/build-resolver`** — Focused purely on build-time errors across any stack: Maven, Gradle, TypeScript (`tsc`), Go (`go build`), Flutter, Python (`mypy`). Classifies the error type and applies a targeted fix. Use when the build fails and you want a specialist, not a generalist.
 
 **`/refactor`** — Maps blast radius, proposes 3 options, applies incrementally with verification after each step. Never breaks existing behavior.
 
@@ -192,7 +226,33 @@ Use `.github/copilot-instructions.template.md` (in this repo) as a manual starti
 
 **`/write-a-commit`** — Reads `git diff --staged`, generates a conventional commit message + PR description paragraph. Copy-paste ready.
 
-**`/init-project`** — Reads project structure, pom.xml, Spring config, existing code patterns. Generates `.github/copilot-instructions.md` based on what is actually in the code, not assumptions.
+**`/init-project`** — Reads project structure, pom.xml, Spring config, existing code patterns. Generates **two files**: `.github/copilot-instructions.md` (Copilot CLI-specific) and `AGENTS.md` (universal — read by any AI agent).
+
+---
+
+## LSP — Code Intelligence
+
+Copilot CLI supports Language Server Protocol for go-to-definition, hover info, and diagnostics. This repo deploys `~/.copilot/lsp-config.json` with starter configs for Java, TypeScript, Dart, and Python.
+
+**Install language servers first:**
+
+```bash
+# Java (requires Eclipse JDT Language Server)
+brew install jdtls   # macOS/Linux
+
+# TypeScript / JavaScript
+npm install -g typescript-language-server typescript
+
+# Dart/Flutter (already available if Flutter SDK is installed)
+dart --version
+
+# Python
+pip install python-lsp-server
+```
+
+**Verify LSP is active** — run `/lsp` inside a Copilot CLI session.
+
+See the `lsp-setup` skill for full setup instructions and troubleshooting: load via `/skills` → `lsp-setup`.
 
 ---
 
@@ -264,12 +324,30 @@ Skills are reference material loaded on-demand when relevant context is detected
 | `search-first` | Starting code exploration, searching for patterns across files |
 | `iterative-retrieval` | Searching large codebases incrementally |
 | `e2e-testing` | Writing Playwright/Cypress E2E tests, page objects, CI setup |
+| `lsp-setup` | Configuring Language Server Protocol, setting up code intelligence per stack |
+
+### Additional Stacks
+
+| Skill | Loads when you're... |
+|---|---|
+| `python-patterns` | Writing FastAPI/Django services, Pydantic models, pytest, async Python |
+| `react-patterns` | Building React + TypeScript apps, TanStack Query, Zustand, React Hook Form |
+| `node-patterns` | Building Express/Fastify APIs in TypeScript, Prisma, JWT auth, Jest + Supertest |
+| `github-actions` | Writing CI/CD workflows, caching, matrix builds, Docker push, reusable workflows |
 
 ---
 
-## MCP Servers (2 — 100% local)
+## MCP Servers
 
-Both servers run as local Node.js processes via `npx`. Zero network calls, zero data sent externally. Safe for corporate environments.
+### Built-in MCP (always active, no config needed)
+
+The **GitHub MCP server** ships with Copilot CLI. It gives agents direct access to your GitHub repos, PRs, issues, and actions. You do NOT need to configure it — it's always active and authenticated via your existing GitHub session.
+
+The `pr-review` agent uses it to read PR diffs. The `write-a-commit` agent uses it to push branches. Any agent can use it for GitHub operations.
+
+### Additional MCP Servers (2 — 100% local)
+
+This template adds 2 more MCP servers on top of the built-in GitHub MCP. Both run as local Node.js processes via `npx`. Zero network calls, zero data sent externally. Safe for corporate environments.
 
 | Server | What it does | When it activates |
 |---|---|---|
@@ -318,6 +396,52 @@ curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-
 
 `install.sh` preserves any `~/.copilot/skills/company-*/` directories. Your local company skills are never overwritten by an update.
 
+### `COPILOT_HOME` — isolated environments
+
+By default Copilot CLI reads from `~/.copilot/`. Set `COPILOT_HOME` to point to a different directory:
+
+```bash
+export COPILOT_HOME=~/work/client-a/.copilot   # client A context
+export COPILOT_HOME=~/work/client-b/.copilot   # client B context
+```
+
+Useful for consulting environments, keeping client contexts isolated, or testing new agent configs without touching your main setup.
+
+---
+
+## Power-User Shortcuts
+
+| Shortcut | What it does |
+|---|---|
+| `Shift+Tab` | Toggle plan mode (write no code until you approve) |
+| `Shift+Tab` × 2 | Activate autopilot mode (auto-approves all tool calls — requires `/experimental` first) |
+| `Ctrl+T` | Toggle chain-of-thought (reasoning) visibility — **persists across sessions** |
+| `Ctrl+G` | Open file picker — jump to any file without typing the path |
+| `!` prefix | Run a shell command inline: `! git status`, `! docker ps` |
+| `@file` prefix | Attach a file as context: `@src/service.ts what does this do?` |
+| `copilot --continue` | Resume the most recent closed session |
+| `copilot --allow-all` | Skip all tool permission prompts (one-shot autopilot) |
+
+### Native slash commands quick reference
+
+| Command | Purpose |
+|---|---|
+| `/agent` | Browse + select from all available agents |
+| `/skills` | Toggle skills on/off for the current session |
+| `/instructions` | Toggle instruction files on/off |
+| `/fleet` | Enable parallel subagent mode (multiple agents, same session) |
+| `/tasks` | View all running background agents and shells |
+| `/compact` | Summarize context history to free up token budget |
+| `/usage` | Show token usage and quota status |
+| `/context` | Context window usage chart |
+| `/diff` | Review all file changes made in the current session |
+| `/delegate` | Send current session to Copilot Agent → lands as a GitHub PR |
+| `/review` | Lightweight code review of current changes (faster than `code-review` agent) |
+| `/lsp` | Show LSP server status and diagnostics |
+| `/plan` | Enter plan mode (also Shift+Tab) |
+| `/research` | Deep research using GitHub search + web sources |
+| `/experimental` | Enable experimental features (required once before autopilot) |
+
 ---
 
 ## Repository Structure
@@ -325,7 +449,9 @@ curl -fsSL https://raw.githubusercontent.com/RogerioSobrinho/copilot-cli-skills-
 ```
 copilot-cli-skills-template/
 ├── .github/
-│   ├── instructions/                    15 modular .instructions.md files
+│   ├── agents/                          Template directory for project-level agents
+│   │   └── README.md                    How to add project-scoped agents
+│   ├── instructions/                    16 modular .instructions.md files
 │   │   ├── core.instructions.md         }
 │   │   ├── engineering.instructions.md  } Layer 1 — language-agnostic (8 files)
 │   │   ├── ...                          }
@@ -334,11 +460,14 @@ copilot-cli-skills-template/
 │   │   ├── ...                          }
 │   │   ├── typescript.instructions.md   } Layer 3 — Angular/TypeScript (2 files)
 │   │   ├── angular.instructions.md      }
-│   │   └── flutter.instructions.md        Layer 4 — Flutter/Dart (1 file)
+│   │   ├── flutter.instructions.md        Layer 4 — Flutter/Dart (1 file)
+│   │   └── python.instructions.md         Layer 5 — Python (1 file)
 │   └── copilot-instructions.template.md   Project context starter template
-├── agents/                              12 agent .agent.md files
-├── skills/                              36 skills, each in skills/{name}/SKILL.md
+├── agents/                              17 agent .agent.md files
+├── skills/                              43 skills, each in skills/{name}/SKILL.md
+├── AGENTS.md                            Universal agent context template (copy to your project)
 ├── mcp-config.json                      MCP servers (sequential-thinking + memory)
+├── lsp-config.json                      LSP server config template (Java, TS, Dart, Python)
 ├── install.sh                           Smart deploy (local or remote via curl)
 └── README.md
 ```

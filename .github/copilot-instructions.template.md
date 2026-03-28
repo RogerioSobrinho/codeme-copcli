@@ -92,11 +92,17 @@ Run these in Copilot CLI for specialized tasks:
 - `/new-feature` — plan and implement a new feature end-to-end
 - `/fix` — diagnose and fix a bug systematically
 - `/code-review` — Java-specific tiered review (CRITICAL/HIGH/MEDIUM)
+- `/pr-review` — review an existing GitHub PR via GitHub MCP
 - `/refactor` — restructure code while preserving behavior
 - `/secure` — security audit and hardening
 - `/doc-writer` — Javadoc, README, ADR, OpenAPI annotations
 - `/write-a-commit` — generate conventional commit from staged changes
 - `/explore` — understand unfamiliar code or trace a behavior
+
+## AGENTS.md
+This project also has an `AGENTS.md` at the root.
+That file contains universal conventions readable by any AI coding agent (Copilot CLI, Claude Code, etc.).
+This file (`.github/copilot-instructions.md`) contains Copilot CLI-specific context (agents list, skills references).
 
 ## Available Company Skills
 {List any machine-local company skills relevant to this project — they are loaded by description

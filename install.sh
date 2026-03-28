@@ -29,6 +29,7 @@ error()   { echo -e "${RED}[err]${NC}   $*"; }
 # All files that compose the template. Update this list when adding new files.
 ROOT_FILES=(
   "mcp-config.json"
+  "lsp-config.json"
 )
 
 # Modular instruction files deployed to ~/.copilot/instructions/
@@ -54,9 +55,13 @@ INSTRUCTIONS=(
   "angular.instructions.md"
   # Layer 4 — Flutter / Dart (toggle off in non-Flutter projects)
   "flutter.instructions.md"
+  # Layer 5 — Python (toggle off in non-Python projects)
+  "python.instructions.md"
 )
 
 AGENTS=(
+  "architect.agent.md"
+  "build-resolver.agent.md"
   "code-review.agent.md"
   "doc-writer.agent.md"
   "explore.agent.md"
@@ -65,9 +70,12 @@ AGENTS=(
   "new-feature.agent.md"
   "new-project.agent.md"
   "planner.agent.md"
+  "pr-review.agent.md"
+  "python-reviewer.agent.md"
   "refactor.agent.md"
   "secure.agent.md"
   "tdd-guide.agent.md"
+  "typescript-reviewer.agent.md"
   "write-a-commit.agent.md"
 )
 
@@ -77,6 +85,7 @@ SKILLS=(
   "angular-tdd"
   "api-design"
   "architecture-decision-records"
+  "autonomous-loops"
   "codebase-onboarding"
   "context-budget"
   "continuous-learning"
@@ -90,13 +99,19 @@ SKILLS=(
   "flutter-patterns"
   "flutter-tdd"
   "frontend-principles"
+  "github-actions"
   "git-workflow"
+  "golang-patterns"
   "iterative-retrieval"
   "java-coding-standards"
   "jpa-patterns"
+  "lsp-setup"
   "messaging-patterns"
+  "node-patterns"
   "observability-patterns"
   "postgres-patterns"
+  "python-patterns"
+  "react-patterns"
   "resilience-patterns"
   "search-first"
   "skill-authoring"
@@ -221,6 +236,19 @@ for file in "${ROOT_FILES[@]}"; do
     continue
   fi
 
+  # lsp-config.json: deploy only if not present (user may have customized it)
+  if [ "$file" = "lsp-config.json" ]; then
+    if [ -f "$TARGET_DIR/$file" ]; then
+      warn "lsp-config.json  → already exists, skipping (edit manually to update)"
+    else
+      if deploy_file "$file" "$TARGET_DIR/$file" "$file"; then
+        success "$file  (LSP server config — edit to match installed language servers)"
+        ((ROOT_UPDATED++)) || true
+      fi
+    fi
+    continue
+  fi
+
   if deploy_file "$file" "$TARGET_DIR/$file" "$file"; then
     success "$file"
     ((ROOT_UPDATED++)) || true
@@ -288,7 +316,8 @@ TOTAL_INSTRS=$(ls "$TARGET_DIR/instructions"/*.instructions.md 2>/dev/null | wc 
 echo "  Instructions : $TOTAL_INSTRS (modular, toggleable)"
 echo "  Agents       : $TOTAL_AGENTS"
 echo "  Skills       : $TOTAL_SKILLS"
-echo "  MCPs         : sequential-thinking, memory"
+echo "  MCPs         : sequential-thinking, memory (GitHub MCP is built-in, always active)"
+echo "  LSP config   : ~/.copilot/lsp-config.json (edit to enable code intelligence)"
 
 if [ ${#PRESERVED[@]} -gt 0 ]; then
   echo ""
@@ -307,9 +336,19 @@ echo ""
 echo "  Then reload your shell: source ~/.bashrc  (or ~/.zshrc)"
 echo "  Toggle individual instruction files via: /instructions"
 echo ""
+echo -e "  ${BLUE}Tip:${NC} Enable LSP code intelligence — edit ~/.copilot/lsp-config.json"
+echo "       Install language servers first: see skills/lsp-setup or /skills lsp-setup"
+echo ""
 echo -e "  ${BLUE}Tip:${NC} Company-specific skills go in:"
 echo "       ~/.copilot/skills/company-{name}-{topic}/SKILL.md"
 echo ""
 echo -e "  ${BLUE}Tip:${NC} For per-project context, run the init-project agent:"
 echo "       cd your-project && copilot  # then: /agent → init-project"
+echo "       Generates: .github/copilot-instructions.md + AGENTS.md + .github/agents/"
+echo ""
+echo -e "  ${BLUE}Tip:${NC} Project-level agents live in .github/agents/ — versioned with your code."
+echo "       See .github/agents/README.md for the format and examples."
+echo ""
+echo -e "  ${BLUE}Tip:${NC} Custom config directory: set COPILOT_HOME to change from ~/.copilot"
+echo "       export COPILOT_HOME=~/work/copilot-config  # in ~/.bashrc"
 echo ""

@@ -55,6 +55,14 @@ When working in large codebases:
 - Avoid loading the full codebase — use `grep`, `glob`, and targeted reads.
 - Stop when you have enough context to act — do not over-explore.
 - For context-heavy tasks (large refactors, multi-file features), use `/compact` to summarize history before continuing.
+- **Auto-compaction:** The CLI automatically compresses history at 95% token limit — no action needed. `/compact` is for proactive compression before that threshold.
+
+## Quota Management
+
+- Use `/usage` to check premium requests consumed in the current session (quota, duration, lines edited, tokens per model).
+- Check `/context` before starting large tasks — if usage is above 50%, run `/compact` first.
+- **Autopilot mode** (`Shift+Tab` to cycle, requires `/experimental` to enable) runs multi-step tasks autonomously. Use with `--allow-all` to skip per-tool approvals in trusted sessions. Combine with `/fleet` for parallel autonomous agents.
+- `COPILOT_HOME` env var changes the config directory from `~/.copilot` to any path. Set in `~/.bashrc` before launching if you want isolated configs per environment.
 
 ## Model Selection
 
