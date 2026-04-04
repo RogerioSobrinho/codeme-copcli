@@ -22,3 +22,12 @@ Before writing any new implementation:
 - **YAGNI:** Solve today's problem. No speculative features.
 - **Pragmatism:** Use complex patterns (DDD, Hexagonal) only when justified.
 - **Decoupling:** Business logic must be framework-agnostic and separated from UI/Controllers.
+
+## No Band-Aid Fixes
+
+Fix the root cause — not the symptom. If a senior engineer would reject the fix in code review, find the real solution:
+
+- Don't suppress compiler/type errors by widening types, adding `@SuppressWarnings`, `// @ts-ignore`, or `# type: ignore`
+- Don't silence test failures by skipping, mocking away the core behavior, or weakening assertions
+- Don't wrap broken code in try/catch to hide the failure
+- If the real fix requires more context or refactoring, say so explicitly instead of applying a workaround

@@ -43,6 +43,22 @@ Before ANY commit:
 - Apply to all service accounts, IAM roles, and logic permissions.
 - Database users should have only the permissions they need (no DBA role for app users).
 
+## Destructive Command Safety
+
+**Block before executing.** These operations cause irreversible data loss — always require explicit user confirmation:
+
+| Category | Blocked patterns |
+|----------|-----------------|
+| File deletion | `rm -rf /`, `rm -rf ~`, `rm -rf $HOME`, `rm -rf ..` |
+| SQL without WHERE | `DROP TABLE`, `DROP DATABASE`, `TRUNCATE TABLE`, `DELETE FROM <table>` (no WHERE) |
+| Git force | `git push --force`, `git push -f`, `git reset --hard` (without explicit user approval) |
+| Secrets exposure | Reading `.env`, `.env.*`, secrets files via cat/grep/head/tail/source |
+
+If asked to run any of these:
+1. Stop and state the danger
+2. Ask for explicit confirmation with the exact command shown
+3. Only proceed after the user confirms in the same turn
+
 ## Security Response Protocol
 
 If a security issue is found:

@@ -43,6 +43,7 @@ INSTRUCTIONS=(
   "testing.instructions.md"
   "git.instructions.md"
   "performance.instructions.md"
+  "verification.instructions.md"
   "multi-option.instructions.md"
   "agents.instructions.md"
   # Layer 2 — Java / Spring Boot (toggle off in non-Java projects)
@@ -289,7 +290,7 @@ fi
 SKILLS_UPDATED=0
 for skill in "${SKILLS[@]}"; do
   skip=false
-  for preserved in "${PRESERVED[@]}"; do
+  for preserved in "${PRESERVED[@]+"${PRESERVED[@]}"}"; do
     [ "$skill" = "$preserved" ] && skip=true && break
   done
   $skip && continue

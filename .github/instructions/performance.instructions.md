@@ -57,6 +57,21 @@ When working in large codebases:
 - For context-heavy tasks (large refactors, multi-file features), use `/compact` to summarize history before continuing.
 - **Auto-compaction:** The CLI automatically compresses history at 95% token limit — no action needed. `/compact` is for proactive compression before that threshold.
 
+## Phased Execution (Large Tasks)
+
+When a task touches more than 5 files or spans multiple modules:
+1. **Phase the work** — break into batches of 5–8 files max per context window
+2. **Use sub-agents** — each agent gets its own fresh ~167K-token context; use `/fleet` for independent subtasks
+3. **Clean before refactoring** — delete dead code and unused imports FIRST; reduces context churn and prevents the agent from reasoning about obsolete code
+4. **Re-read critical files** after 15+ turns — auto-compaction may have compressed your memory of earlier reads
+
+## Context Decay Warning
+
+After a long conversation (15+ turns) or after `/compact` fires:
+- Do NOT assume you remember the file contents you read earlier
+- Re-read any file you're about to edit if it was last read more than 10 turns ago
+- Re-run key searches if you're unsure whether results are still accurate
+
 ## Quota Management
 
 - Use `/usage` to check premium requests consumed in the current session (quota, duration, lines edited, tokens per model).
